@@ -51,10 +51,71 @@
 }
 
 .canvas-panel {
-  flex: 1;
   min-height: 620px;
   overflow: hidden;
   padding: 0;
+}
+
+.content-grid {
+  display: grid;
+  flex: 1;
+  gap: 16px;
+  grid-template-columns: 300px minmax(0, 1fr);
+  min-height: 620px;
+}
+
+.sidebar {
+  padding: 16px;
+}
+
+.sidebar h2 {
+  color: #111827;
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.sidebar-help {
+  color: #4b5563;
+  font-size: 0.92rem;
+  margin: 10px 0 12px;
+}
+
+.device-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.device-item {
+  align-items: center;
+  background: #f8faff;
+  border: 1px solid #d5ddef;
+  border-radius: 10px;
+  cursor: grab;
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 12px;
+}
+
+.device-item strong {
+  color: #111827;
+  display: block;
+  font-size: 0.92rem;
+}
+
+.device-item p {
+  color: #6b7280;
+  font-size: 0.82rem;
+  margin: 2px 0 0;
+}
+
+.device-item span {
+  color: #1d4ed8;
+  font-size: 0.8rem;
+  font-weight: 600;
 }
 
 .floor-plan-canvas {
@@ -83,6 +144,10 @@
     align-items: flex-start;
     flex-direction: column;
     gap: 12px;
+  }
+
+  .content-grid {
+    grid-template-columns: 1fr;
   }
 
   .canvas-panel,

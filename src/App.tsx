@@ -1,6 +1,9 @@
 import { useMemo, useState } from "react";
+import type { DragEvent } from "react";
 import "./App.css";
 import { FloorPlanCanvas } from "./features/floor-plan/components/FloorPlanCanvas";
+import { mockDevices } from "./features/devices/mocks/devices";
+import type { Device } from "./features/devices/types";
 import { mockFloorPlans } from "./features/floor-plan/mocks/floorPlans";
 import type { FloorPlanTransform } from "./features/floor-plan/types";
 
@@ -18,10 +21,21 @@ function App() {
       ])
     )
   );
+  const [devicesById, setDevicesById] = useState<Record<string, Device>>(() =>
+    Object.fromEntries(mockDevices.map((device) => [device.id, device]))
+  );
 
   const selectedFloorPlan = useMemo(
     () => mockFloorPlans.find((floorPlan) => floorPlan.id === selectedFloorId),
     [selectedFloorId]
+  );
+
+  const floorDevices = useMemo(
+    () =>
+      Object.values(devicesById).filter(
+        (device) => device.floorPlanId === selectedFloorPlan?.id
+      ),
+    [devicesById, selectedFloorPlan?.id]
   );
 
   if (mockFloorPlans.length === 0) {
@@ -57,6 +71,52 @@ function App() {
     }));
   };
 
+  const handleDeviceDrop = (deviceId: string, x: number, y: number) => {
+    setDevicesById((currentDevices) => {
+      const device = currentDevices[deviceId];
+
+      if (!device || device.floorPlanId !== selectedFloorPlan.id) {
+        return currentDevices;
+      }
+
+      return {
+        ...currentDevices,
+        [deviceId]: {
+          ...device,
+          x,
+          y,
+        },
+      };
+    });
+  };
+
+  const handleDeviceMove = (deviceId: string, x: number, y: number) => {
+    setDevicesById((currentDevices) => {
+      const device = currentDevices[deviceId];
+
+      if (!device || device.floorPlanId !== selectedFloorPlan.id) {
+        return currentDevices;
+      }
+
+      return {
+        ...currentDevices,
+        [deviceId]: {
+          ...device,
+          x,
+          y,
+        },
+      };
+    });
+  };
+
+  const handleSidebarDragStart = (
+    event: DragEvent<HTMLLIElement>,
+    deviceId: string
+  ) => {
+    event.dataTransfer.setData("application/device-id", deviceId);
+    event.dataTransfer.effectAllowed = "move";
+  };
+
   return (
     <main className="app">
       <header className="panel toolbar">
@@ -79,12 +139,44 @@ function App() {
         </label>
       </header>
 
-      <section className="panel canvas-panel">
-        <FloorPlanCanvas
-          floorPlan={selectedFloorPlan}
-          transform={selectedTransform}
-          onTransformChange={handleTransformChange}
-        />
+      <section className="content-grid">
+        <aside className="panel sidebar">
+          <h2>Devices</h2>
+          <p className="sidebar-help">
+            Drag a device and drop it on the floor plan.
+          </p>
+          <ul className="device-list">
+            {floorDevices.map((device) => (
+              <li
+                key={device.id}
+                className="device-item"
+                draggable
+                onDragStart={(event) =>
+                  handleSidebarDragStart(event, device.id)
+                }
+              >
+                <div>
+                  <strong>{device.name}</strong>
+                  <p>{device.type}</p>
+                </div>
+                <span>
+                  {typeof device.x === "number" ? "Placed" : "Unplaced"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </aside>
+
+        <section className="panel canvas-panel">
+          <FloorPlanCanvas
+            floorPlan={selectedFloorPlan}
+            transform={selectedTransform}
+            devices={floorDevices}
+            onTransformChange={handleTransformChange}
+            onDeviceDrop={handleDeviceDrop}
+            onDeviceMove={handleDeviceMove}
+          />
+        </section>
       </section>
     </main>
   );

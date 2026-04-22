@@ -1,12 +1,23 @@
 import { useEffect, useRef, useState } from "react";
-import { Group, Image as KonvaImage, Layer, Stage } from "react-konva";
-import type { KonvaEventObject } from "konva/lib/Node";
+import type { DragEvent } from "react";
+import {
+  Circle,
+  Group,
+  Image as KonvaImage,
+  Layer,
+  Stage,
+  Text,
+} from "react-konva";
 import type { FloorPlan, FloorPlanTransform } from "../types";
+import type { Device, DeviceType } from "../../devices/types";
 
 type FloorPlanCanvasProps = {
   floorPlan: FloorPlan;
   transform: FloorPlanTransform;
+  devices: Device[];
   onTransformChange?: (transform: FloorPlanTransform) => void;
+  onDeviceDrop?: (deviceId: string, x: number, y: number) => void;
+  onDeviceMove?: (deviceId: string, x: number, y: number) => void;
 };
 
 type CanvasSize = {
@@ -22,7 +33,10 @@ const DEFAULT_CANVAS_SIZE: CanvasSize = {
 export function FloorPlanCanvas({
   floorPlan,
   transform,
+  devices,
   onTransformChange,
+  onDeviceDrop,
+  onDeviceMove,
 }: FloorPlanCanvasProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [canvasSize, setCanvasSize] = useState<CanvasSize>(DEFAULT_CANVAS_SIZE);
@@ -69,16 +83,64 @@ export function FloorPlanCanvas({
     };
   }, [floorPlan.imageUrl]);
 
-  const handleDragEnd = (event: KonvaEventObject<DragEvent>) => {
-    onTransformChange?.({
-      x: event.target.x(),
-      y: event.target.y(),
-      scale: transform.scale,
-    });
+  const toMapCoordinates = (clientX: number, clientY: number) => {
+    const container = containerRef.current;
+
+    if (!container) {
+      return null;
+    }
+
+    const rect = container.getBoundingClientRect();
+    const stageX = clientX - rect.left;
+    const stageY = clientY - rect.top;
+
+    return {
+      x: (stageX - transform.x) / transform.scale,
+      y: (stageY - transform.y) / transform.scale,
+    };
+  };
+
+  const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+  };
+
+  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+
+    const deviceId = event.dataTransfer.getData("application/device-id");
+
+    if (!deviceId) {
+      return;
+    }
+
+    const coordinates = toMapCoordinates(event.clientX, event.clientY);
+
+    if (!coordinates) {
+      return;
+    }
+
+    onDeviceDrop?.(deviceId, coordinates.x, coordinates.y);
+  };
+
+  const getDeviceColor = (deviceType: DeviceType) => {
+    if (deviceType === "alarm-button") {
+      return "#dc2626";
+    }
+
+    if (deviceType === "beacon") {
+      return "#2563eb";
+    }
+
+    return "#16a34a";
   };
 
   return (
-    <div className="floor-plan-canvas" ref={containerRef}>
+    <div
+      className="floor-plan-canvas"
+      ref={containerRef}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
       {error ? (
         <p className="canvas-message" role="alert">
           Failed to load floor plan image.
@@ -98,7 +160,13 @@ export function FloorPlanCanvas({
                 y={transform.y}
                 scaleX={transform.scale}
                 scaleY={transform.scale}
-                onDragEnd={handleDragEnd}
+                onDragEnd={(event) => {
+                  onTransformChange?.({
+                    x: event.target.x(),
+                    y: event.target.y(),
+                    scale: transform.scale,
+                  });
+                }}
               >
                 {image && (
                   <KonvaImage
@@ -107,6 +175,37 @@ export function FloorPlanCanvas({
                     height={floorPlan.height}
                   />
                 )}
+                {devices
+                  .filter(
+                    (device) =>
+                      typeof device.x === "number" &&
+                      typeof device.y === "number"
+                  )
+                  .map((device) => (
+                    <Group
+                      key={device.id}
+                      draggable
+                      x={device.x}
+                      y={device.y}
+                      onDragEnd={(event) => {
+                        event.cancelBubble = true;
+                        onDeviceMove?.(
+                          device.id,
+                          event.target.x(),
+                          event.target.y()
+                        );
+                      }}
+                    >
+                      <Circle fill={getDeviceColor(device.type)} radius={12} />
+                      <Text
+                        fontSize={12}
+                        fill="#111827"
+                        text={device.name}
+                        x={18}
+                        y={-6}
+                      />
+                    </Group>
+                  ))}
               </Group>
             </Layer>
           </Stage>
