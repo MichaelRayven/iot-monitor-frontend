@@ -8,13 +8,12 @@ import {
   Stage,
   Text,
 } from "react-konva";
-import type { FloorPlan, FloorPlanTransform } from "../types";
-import type { Device, DeviceType } from "../../devices/types";
+import type { FloorPlanTransform, FloorSchema } from "../types";
+import type { DeviceSchema } from "@/features/devices/types";
 
 type FloorPlanCanvasProps = {
-  floorPlan: FloorPlan;
+  floorPlan: FloorSchema;
   transform: FloorPlanTransform;
-  devices: Device[];
   onTransformChange?: (transform: FloorPlanTransform) => void;
   onDeviceDrop?: (deviceId: string, x: number, y: number) => void;
   onDeviceMove?: (deviceId: string, x: number, y: number) => void;
@@ -33,7 +32,6 @@ const DEFAULT_CANVAS_SIZE: CanvasSize = {
 export function FloorPlanCanvas({
   floorPlan,
   transform,
-  devices,
   onTransformChange,
   onDeviceDrop,
   onDeviceMove,
@@ -42,6 +40,8 @@ export function FloorPlanCanvas({
   const [canvasSize, setCanvasSize] = useState<CanvasSize>(DEFAULT_CANVAS_SIZE);
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const devices = floorPlan.devices ?? []
 
   useEffect(() => {
     const container = containerRef.current;
@@ -70,18 +70,27 @@ export function FloorPlanCanvas({
 
   useEffect(() => {
     const nextImage = new Image();
+    const imageUrl = floorPlan.floorplan_url;
+
+    if (!imageUrl) {
+      setImage(null);
+      setError("No floor plan image has been uploaded.");
+      return;
+    }
+
+    setError(null);
     nextImage.onload = () => {
       setImage(nextImage);
     };
     nextImage.onerror = () => {
-      setError(`Failed to load floor plan image: ${floorPlan.imageUrl}`);
+      setError(`Failed to load floor plan image: ${imageUrl}`);
     };
-    nextImage.src = floorPlan.imageUrl;
+    nextImage.src = imageUrl;
 
     return () => {
       setImage(null);
     };
-  }, [floorPlan.imageUrl]);
+  }, [floorPlan.floorplan_url]);
 
   const toMapCoordinates = (clientX: number, clientY: number) => {
     const container = containerRef.current;
@@ -122,7 +131,12 @@ export function FloorPlanCanvas({
     onDeviceDrop?.(deviceId, coordinates.x, coordinates.y);
   };
 
-  const getDeviceColor = (deviceType: DeviceType) => {
+  const getDeviceType = (device: DeviceSchema) =>
+    device.device_type ?? device.device_type ?? "unknown";
+
+  const getDeviceName = (device: DeviceSchema) => device.name ?? device.dev_eui;
+
+  const getDeviceColor = (deviceType: string) => {
     if (deviceType === "alarm-button") {
       return "#dc2626";
     }
@@ -140,6 +154,7 @@ export function FloorPlanCanvas({
       ref={containerRef}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
+      
     >
       {error ? (
         <p className="canvas-message" role="alert">
@@ -152,55 +167,70 @@ export function FloorPlanCanvas({
               Loading floor plan...
             </p>
           )}
-          <Stage width={canvasSize.width} height={canvasSize.height}>
-            <Layer>
-              <Group
-                draggable
-                x={transform.x}
-                y={transform.y}
-                scaleX={transform.scale}
-                scaleY={transform.scale}
+          <Stage 
+                draggable 
                 onDragEnd={(event) => {
                   onTransformChange?.({
                     x: event.target.x(),
                     y: event.target.y(),
-                    scale: transform.scale,
-                  });
-                }}
-              >
+                    scale: transform.scale}
+                  )}}
+                onWheel={(event) => {
+                  if (event.evt.deltaY > 0) {
+                    if (transform.scale > 1) {
+                      onTransformChange?.({
+                        x: transform.x,
+                        y: transform.y,
+                        scale: transform.scale - 0.1}
+                      )}
+                  } else {
+                    onTransformChange?.({
+                        x: transform.x,
+                        y: transform.y,
+                        scale: transform.scale + 0.1}
+                      )}
+                  }
+                }
+                width={canvasSize.width} 
+                height={canvasSize.height} 
+                x={transform.x}
+                y={transform.y}
+                scaleX={transform.scale}
+                scaleY={transform.scale}>
+            <Layer>
+              <Group>
                 {image && (
                   <KonvaImage
                     image={image}
-                    width={floorPlan.width}
-                    height={floorPlan.height}
                   />
                 )}
                 {devices
                   .filter(
-                    (device) =>
-                      typeof device.x === "number" &&
-                      typeof device.y === "number"
+                    (device) => device.is_stationary
                   )
                   .map((device) => (
                     <Group
-                      key={device.id}
+                      key={device.dev_eui}
                       draggable
-                      x={device.x}
-                      y={device.y}
+                      x={device.x ?? 0}
+                      y={device.y ?? 0}
                       onDragEnd={(event) => {
                         event.cancelBubble = true;
                         onDeviceMove?.(
-                          device.id,
+                          device.dev_eui,
                           event.target.x(),
                           event.target.y()
                         );
                       }}
                     >
-                      <Circle fill={getDeviceColor(device.type)} radius={12} />
+                      <Circle
+                        fill={getDeviceColor(getDeviceType(device))}
+                        radius={12}
+                      />
                       <Text
                         fontSize={12}
                         fill="#111827"
-                        text={device.name}
+                        text={getDeviceName(device)}
                         x={18}
                         y={-6}
                       />

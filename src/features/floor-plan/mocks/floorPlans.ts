@@ -1,10 +1,15 @@
-import type { FloorPlan } from "../types";
+import type { FloorPlanTransform } from "../types";
 
-export const mockFloorPlans: FloorPlan[] = [
+type MockFloorPlan = {
+  floorplan_url: string;
+  height: number;
+  initialTransform: FloorPlanTransform;
+  width: number;
+};
+
+export const mockFloorPlans: MockFloorPlan[] = [
   {
-    id: "floor-1",
-    name: "Floor 1",
-    imageUrl: "/floor-1.jpg",
+    floorplan_url: "/floor-1.jpg",
     width: 1800,
     height: 1200,
     initialTransform: {
@@ -14,9 +19,7 @@ export const mockFloorPlans: FloorPlan[] = [
     },
   },
   {
-    id: "floor-2",
-    name: "Floor 2",
-    imageUrl: "/floor-2.jpg",
+    floorplan_url: "/floor-2.jpg",
     width: 1800,
     height: 1200,
     initialTransform: {

@@ -1,10 +1,12 @@
-export type DeviceType = "badge" | "beacon" | "alarm-button";
-
-export type Device = {
-  id: string;
-  name: string;
-  type: DeviceType;
-  floorPlanId: string;
-  x?: number;
-  y?: number;
+export type DeviceSchema = {
+  dev_eui: string;
+  name?: string;
+  device_type?: string;
+  rssi?: number | null;
+  snr?: number | null;
+  floor_id?: string | null;
+  is_stationary?: boolean | null;
+  x?: number | null;
+  y?: number | null;
+  data?: Record<string, unknown> | null;
 };

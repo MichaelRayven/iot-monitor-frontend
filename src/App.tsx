@@ -1,185 +1,201 @@
-import { useMemo, useState } from "react";
-import type { DragEvent } from "react";
-import "./App.css";
-import { FloorPlanCanvas } from "./features/floor-plan/components/FloorPlanCanvas";
-import { mockDevices } from "./features/devices/mocks/devices";
-import type { Device } from "./features/devices/types";
-import { mockFloorPlans } from "./features/floor-plan/mocks/floorPlans";
-import type { FloorPlanTransform } from "./features/floor-plan/types";
+import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
-function App() {
-  const [selectedFloorId, setSelectedFloorId] = useState(
-    mockFloorPlans[0]?.id ?? ""
-  );
-  const [transformsByFloorId, setTransformsByFloorId] = useState<
-    Record<string, FloorPlanTransform>
-  >(() =>
-    Object.fromEntries(
-      mockFloorPlans.map((floorPlan) => [
-        floorPlan.id,
-        floorPlan.initialTransform,
-      ])
-    )
-  );
-  const [devicesById, setDevicesById] = useState<Record<string, Device>>(() =>
-    Object.fromEntries(mockDevices.map((device) => [device.id, device]))
-  );
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+  FieldLegend,
+  FieldSeparator,
+  FieldSet,
+} from "@/components/ui/field"
+import "./index.css";
 
-  const selectedFloorPlan = useMemo(
-    () => mockFloorPlans.find((floorPlan) => floorPlan.id === selectedFloorId),
-    [selectedFloorId]
-  );
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
-  const floorDevices = useMemo(
-    () =>
-      Object.values(devicesById).filter(
-        (device) => device.floorPlanId === selectedFloorPlan?.id
-      ),
-    [devicesById, selectedFloorPlan?.id]
-  );
+export function DeviceList() {
+  return <div className="p-4 border rounded-lg shadow-sm hover:cursor-pointer">
+    <div className="flex gap-2">
+    <div>
+      <p className="font-medium">Smart 0101</p>
+      <p className="text-muted-foreground">EDC72307FC53CFD</p>
+    </div>
+    <div className="bg-green-600 size-2 rounded-full ml-auto"></div>
+  </div>
+  <div>
+    <p>RSSI: -12.32</p>
+    <p>SNR: 2</p>
+  </div>
+  </div>
+}
 
-  if (mockFloorPlans.length === 0) {
-    return (
-      <main className="app">
-        <section className="panel empty-state">
-          <h1>Monitoring Dashboard</h1>
-          <p>No floor plans are configured yet.</p>
-        </section>
-      </main>
-    );
-  }
-
-  if (!selectedFloorPlan) {
-    return (
-      <main className="app">
-        <section className="panel empty-state">
-          <h1>Monitoring Dashboard</h1>
-          <p>Selected floor plan was not found.</p>
-        </section>
-      </main>
-    );
-  }
-
-  const selectedTransform =
-    transformsByFloorId[selectedFloorPlan.id] ??
-    selectedFloorPlan.initialTransform;
-
-  const handleTransformChange = (nextTransform: FloorPlanTransform) => {
-    setTransformsByFloorId((currentTransforms) => ({
-      ...currentTransforms,
-      [selectedFloorPlan.id]: nextTransform,
-    }));
-  };
-
-  const handleDeviceDrop = (deviceId: string, x: number, y: number) => {
-    setDevicesById((currentDevices) => {
-      const device = currentDevices[deviceId];
-
-      if (!device || device.floorPlanId !== selectedFloorPlan.id) {
-        return currentDevices;
-      }
-
-      return {
-        ...currentDevices,
-        [deviceId]: {
-          ...device,
-          x,
-          y,
-        },
-      };
-    });
-  };
-
-  const handleDeviceMove = (deviceId: string, x: number, y: number) => {
-    setDevicesById((currentDevices) => {
-      const device = currentDevices[deviceId];
-
-      if (!device || device.floorPlanId !== selectedFloorPlan.id) {
-        return currentDevices;
-      }
-
-      return {
-        ...currentDevices,
-        [deviceId]: {
-          ...device,
-          x,
-          y,
-        },
-      };
-    });
-  };
-
-  const handleSidebarDragStart = (
-    event: DragEvent<HTMLLIElement>,
-    deviceId: string
-  ) => {
-    event.dataTransfer.setData("application/device-id", deviceId);
-    event.dataTransfer.effectAllowed = "move";
-  };
-
+export function FloorCreationDialog() {
   return (
-    <main className="app">
-      <header className="panel toolbar">
-        <div>
-          <h1>Monitoring Dashboard</h1>
-        </div>
-        <label className="floor-select" htmlFor="floor-selector">
-          Floor
-          <select
-            id="floor-selector"
-            value={selectedFloorPlan.id}
-            onChange={(event) => setSelectedFloorId(event.target.value)}
-          >
-            {mockFloorPlans.map((floorPlan) => (
-              <option key={floorPlan.id} value={floorPlan.id}>
-                {floorPlan.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      </header>
+    <Card className="w-full max-w-sm">
+      <CardHeader>
+        <Button variant="link" className="w-min"><ArrowLeftIcon/> Назад</Button>
+        <CardTitle>Создание этажа</CardTitle>
+        <CardDescription>
+          Введите данные этажа.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form>
+        <FieldGroup>
+          <FieldSet>
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="floor-name-field-1">
+                  Название этажа
+                </FieldLabel>
+                <Input
+                  id="floor-name-field-1"
+                  placeholder="1 этаж"
+                  required
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="floor-image-field-1">
+                  Изображение этажа
+                </FieldLabel>
+                <ImageInput
+                  id="floor-image-field-1"                  
+                  required
+                />
+                <FieldDescription>
+                  Поддерживаемые форматы: .png, .jpg, .jpeg, .webp. Максимальный размер файла 5 MB.
+                </FieldDescription>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="floor-image-field-1">
+                  Список устройств
+                </FieldLabel>
+                <DeviceList/>
+              </Field>
+            </FieldGroup>
+          </FieldSet>
+        </FieldGroup>
+      </form>
+      </CardContent>
+      <CardFooter className="flex-col gap-2">
+        <Button type="submit" className="w-full">
+          Добавить этаж
+        </Button>
+      </CardFooter>
+    </Card>
+  )
+}
 
-      <section className="content-grid">
-        <aside className="panel sidebar">
-          <h2>Devices</h2>
-          <p className="sidebar-help">
-            Drag a device and drop it on the floor plan.
-          </p>
-          <ul className="device-list">
-            {floorDevices.map((device) => (
-              <li
-                key={device.id}
-                className="device-item"
-                draggable
-                onDragStart={(event) =>
-                  handleSidebarDragStart(event, device.id)
-                }
-              >
-                <div>
-                  <strong>{device.name}</strong>
-                  <p>{device.type}</p>
-                </div>
-                <span>
-                  {typeof device.x === "number" ? "Placed" : "Unplaced"}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </aside>
 
-        <section className="panel canvas-panel">
-          <FloorPlanCanvas
-            floorPlan={selectedFloorPlan}
-            transform={selectedTransform}
-            devices={floorDevices}
-            onTransformChange={handleTransformChange}
-            onDeviceDrop={handleDeviceDrop}
-            onDeviceMove={handleDeviceMove}
-          />
-        </section>
-      </section>
+export function FloorSelect() {
+  return (
+    <Select>
+      <SelectTrigger className="w-full max-w-48">
+        <SelectValue placeholder="Select a floor" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectGroup>
+          <SelectLabel>Floor</SelectLabel>
+          <SelectItem value="apple">Floor 1</SelectItem>
+          <SelectItem value="banana">Floor 2</SelectItem>
+          <SelectItem value="blueberry">Floor 3</SelectItem>
+          <SelectItem value="grapes">Floor 4</SelectItem>
+          <SelectItem value="pineapple">Floor 5</SelectItem>
+        </SelectGroup>
+      </SelectContent>
+    </Select>
+  )
+}
+
+const Header = () => {
+  return <header className="w-full py-4 bg-background">
+    <div className="wfull max-w-[calc(100vw-8rem)] mx-auto flex">
+
+    <FloorSelect />
+    <Button>New floor</Button>
+
+    </div>
+  </header>
+}
+
+const Footer = () => {
+  return "Footer"
+}
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
+import { FloorPlanCanvas } from "./features/floor-plan/components/FloorPlanCanvas";
+import { ArrowLeftIcon, ImageIcon } from "lucide-react"
+import { ImageInput } from "./components/ui/image-input"
+
+const Sidebar = () => {
+  return (
+    <div className="bg-red-100 max-w-64 p-4">
+      <h3>Device list</h3>
+      <ScrollArea className="h-72 w-48 rounded-md border p-2">
+        <div>Device 1</div>
+        <div>Device 2</div>
+        <div>Device 3</div>
+        <div>Device 4</div>
+        <div>Device 5</div>
+        <div>Device 6</div>
+        <div>Device 7</div>
+        <div>Device 8</div>
+        <div>Device 9</div>
+        <div>Device 10</div>
+      </ScrollArea>
+    </div>
+  )
+}
+
+const Map = () => {
+  return <div>
+    <FloorPlanCanvas floorPlan={{
+      id: "floor-1",
+      name: "Floor 1",
+      building: "5",
+      scale_factor: 0.1,
+      floorplan_url: "/floor-1.jpg",
+      devices: []
+    }} 
+    transform={{
+      x: 0,
+      y: 0,
+      scale: 0.5,
+    }}/>
+  </div>
+}
+
+const App = () => {
+  return (<div>
+    <Header></Header>
+    <main>
+      <div className="flex">
+
+    <Sidebar></Sidebar>
+    <Map></Map>
+      </div>
     </main>
-  );
+    <FloorCreationDialog />
+    <Footer></Footer>
+  </div>)
 }
 
 export default App;
