@@ -1,13 +1,10 @@
-import { CameraIcon } from "lucide-react"
+import { CameraIcon } from "lucide-react";
 
-import { Input } from "@/components/ui/input"
-import { cn } from "@/lib/utils"
-import { useEffect, useId, useState } from "react"
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+import { useEffect, useId, useState } from "react";
 
-type ImageUploadInputProps = Omit<
-  React.ComponentProps<typeof Input>,
-  "type"
->
+type ImageUploadInputProps = Omit<React.ComponentProps<typeof Input>, "type">;
 
 export function ImageInput({
   id,
@@ -15,28 +12,28 @@ export function ImageInput({
   onChange,
   ...props
 }: ImageUploadInputProps) {
-  const inputId = useId()
-  const finalId = id ?? inputId
+  const inputId = useId();
+  const finalId = id ?? inputId;
 
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0]
+    const file = event.target.files?.[0];
 
     if (file) {
-      setPreviewUrl(URL.createObjectURL(file))
+      setPreviewUrl(URL.createObjectURL(file));
     } else {
-      setPreviewUrl(null)
+      setPreviewUrl(null);
     }
 
-    onChange?.(event)
+    onChange?.(event);
   }
 
   useEffect(() => {
     return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl)
-    }
-  }, [previewUrl])
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   return (
     <div className={cn("w-full", className)}>
@@ -51,7 +48,7 @@ export function ImageInput({
 
       <label
         htmlFor={finalId}
-        className="relative flex aspect-5/2 w-full cursor-pointer flex-col items-center justify-center shadow-xs overflow-hidden rounded-lg border border-dashed border-input bg-background text-muted-foreground transition-colors hover:bg-muted/50"
+        className="border-input bg-background text-muted-foreground hover:bg-muted/50 relative flex aspect-5/2 w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border shadow-xs transition-colors"
       >
         {previewUrl ? (
           <img
@@ -62,11 +59,10 @@ export function ImageInput({
         ) : (
           <div className="flex flex-col items-center justify-center gap-3">
             <span className="text-sm font-semibold">Загрузить изображение</span>
-            <CameraIcon
-                className="h-8 w-8" strokeWidth={1.4}/>
+            <CameraIcon className="h-8 w-8" strokeWidth={1.4} />
           </div>
         )}
       </label>
     </div>
-  )
+  );
 }
