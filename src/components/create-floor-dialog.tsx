@@ -26,99 +26,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useImageUpload } from "@/hooks/useImageUpload";
 import { BuildingSelect } from "./building-select";
-
-type DeviceListItemProps = {
-  name: string;
-  dev_eui: string;
-  rssi: number;
-  snr: number;
-  is_stationary: boolean;
-  x?: number;
-  y?: number;
-};
-
-export function DeviceListItem({
-  name,
-  is_stationary,
-  rssi,
-  snr,
-  dev_eui,
-  x = 0,
-  y = 0,
-}: DeviceListItemProps) {
-  return (
-    <div className="rounded-lg border p-4 shadow-sm hover:cursor-pointer">
-      <div className="flex gap-2">
-        <div>
-          <p className="flex items-center gap-2 font-medium">
-            {name}
-            {is_stationary && (
-              <MapPinIcon className="text-muted-foreground size-4" />
-            )}
-          </p>
-          <p className="text-muted-foreground">{dev_eui}</p>
-        </div>
-
-        <div className="ml-auto size-2 rounded-full bg-green-600"></div>
-      </div>
-
-      <Separator className="my-2" />
-
-      <div className="flex gap-2">
-        <p>
-          RSSI: {rssi} SNR: {snr}
-        </p>
-      </div>
-      {is_stationary && (
-        <div className="flex gap-2">
-          <p>
-            Позиция: X: {x}, Y: {y}
-          </p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-export function DeviceList() {
-  return (
-    <ScrollArea className="h-full w-full rounded-md border shadow-sm">
-      <div className="space-y-2 p-4">
-        <DeviceListItem
-          name="Smart 0101"
-          is_stationary={true}
-          dev_eui="EDC72307FC53CFD"
-          rssi={10}
-          snr={10}
-        />
-        <DeviceListItem
-          name="Smart 0101"
-          is_stationary={true}
-          dev_eui="EDC72307FC53CFD"
-          rssi={10}
-          snr={10}
-        />
-        <DeviceListItem
-          name="Smart 0101"
-          is_stationary={false}
-          dev_eui="EDC72307FC53CFD"
-          rssi={10}
-          snr={10}
-        />
-        <DeviceListItem
-          name="Smart 0101"
-          is_stationary={true}
-          dev_eui="EDC72307FC53CFD"
-          rssi={10}
-          snr={10}
-        />
-      </div>
-    </ScrollArea>
-  );
-}
+import { useState } from "react";
+import type { BaseFloorSchema } from "@/features/floor-plan/types";
 
 const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL!;
 
@@ -143,6 +55,8 @@ const formSchema = z.object({
 });
 
 export function CreateFloorDialog() {
+  const [open, setOpen] = useState(false);
+  const queryClient = useQueryClient();
   const { upload } = useImageUpload();
 
   const createFloor = useMutation({
@@ -166,6 +80,15 @@ export function CreateFloorDialog() {
 
       return response.json();
     },
+    onSuccess: async (data: BaseFloorSchema) => {
+      queryClient.setQueryData(["floors"], (old: BaseFloorSchema[] = []) => {
+        return [data, ...old];
+      });
+      queryClient.invalidateQueries({ queryKey: ["floors"] });
+
+      setOpen(false);
+      form.reset();
+    }
   });
 
   const form = useForm({
@@ -193,7 +116,7 @@ export function CreateFloorDialog() {
   });
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button
           variant="outline"
@@ -329,7 +252,7 @@ export function CreateFloorDialog() {
           </FieldGroup>
           <DialogFooter className="mt-4">
             <Button type="submit" disabled={false}>
-              {true ? "Загрузка..." : "Создать"}
+              {createFloor.isPending ? "Загрузка..." : "Создать"}
             </Button>
           </DialogFooter>
         </form>

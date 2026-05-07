@@ -9,15 +9,16 @@ import {
 } from "@/components/ui/select";
 import type { BaseFloorSchema } from "@/features/floor-plan/types";
 import { useQuery } from "@tanstack/react-query";
+import { Select as SelectPrimitive } from "radix-ui";
 import { Loader2Icon } from "lucide-react";
 
 const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL!;
 
 type FloorSelectProps = {
   buildingId: number;
-};
+} & React.ComponentProps<typeof SelectPrimitive.Root>;
 
-export function FloorSelect({ buildingId }: FloorSelectProps) {
+export function FloorSelect({ buildingId, ...props }: FloorSelectProps) {
   const { isPending, error, data } = useQuery<BaseFloorSchema[]>({
     queryKey: ["floors"],
     queryFn: () =>
@@ -29,7 +30,7 @@ export function FloorSelect({ buildingId }: FloorSelectProps) {
   const isDisabled = isPending || !!error || data?.length == 0;
 
   return (
-    <Select disabled={isDisabled}>
+    <Select disabled={isDisabled} {...props}>
       <SelectTrigger className="w-full min-w-48">
         {isPending ? (
           <div className="flex items-center gap-2">

@@ -12,6 +12,7 @@ import type { FloorPlanTransform, FloorSchema } from "../types";
 import type { DeviceSchema } from "@/features/devices/types";
 
 type FloorPlanCanvasProps = {
+  className?: string;
   floorPlan: FloorSchema;
   transform: FloorPlanTransform;
   onTransformChange?: (transform: FloorPlanTransform) => void;
@@ -30,6 +31,7 @@ const DEFAULT_CANVAS_SIZE: CanvasSize = {
 };
 
 export function FloorPlanCanvas({
+  className,
   floorPlan,
   transform,
   onTransformChange,
@@ -150,11 +152,11 @@ export function FloorPlanCanvas({
 
   return (
     <div
-      className="floor-plan-canvas"
+      className={className}
       ref={containerRef}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
-      
+      onWheel={(e) => e.preventDefault()}
     >
       {error ? (
         <p className="canvas-message" role="alert">
@@ -167,36 +169,43 @@ export function FloorPlanCanvas({
               Loading floor plan...
             </p>
           )}
-          <Stage 
-                draggable 
-                onDragEnd={(event) => {
+          <Stage
+            draggable
+            onDragEnd={(event) => {
+              onTransformChange?.({
+                x: event.target.x(),
+                y: event.target.y(),
+                scale: transform.scale
+              }
+              )
+            }}
+            onWheel={(event) => {
+              if (event.evt.deltaY > 0) {
+                if (transform.scale > 0.5) {
                   onTransformChange?.({
-                    x: event.target.x(),
-                    y: event.target.y(),
-                    scale: transform.scale}
-                  )}}
-                onWheel={(event) => {
-                  if (event.evt.deltaY > 0) {
-                    if (transform.scale > 1) {
-                      onTransformChange?.({
-                        x: transform.x,
-                        y: transform.y,
-                        scale: transform.scale - 0.1}
-                      )}
-                  } else {
-                    onTransformChange?.({
-                        x: transform.x,
-                        y: transform.y,
-                        scale: transform.scale + 0.1}
-                      )}
+                    x: transform.x,
+                    y: transform.y,
+                    scale: transform.scale - 0.01
                   }
+                  )
                 }
-                width={canvasSize.width} 
-                height={canvasSize.height} 
-                x={transform.x}
-                y={transform.y}
-                scaleX={transform.scale}
-                scaleY={transform.scale}>
+              } else {
+                if (transform.scale < 2.0) {
+                  onTransformChange?.({
+                    x: transform.x,
+                    y: transform.y,
+                    scale: transform.scale + 0.01
+                  })
+                }
+
+              }
+            }}
+            width={canvasSize.width}
+            height={canvasSize.height}
+            x={transform.x}
+            y={transform.y}
+            scaleX={transform.scale}
+            scaleY={transform.scale}>
             <Layer>
               <Group>
                 {image && (
@@ -240,7 +249,8 @@ export function FloorPlanCanvas({
             </Layer>
           </Stage>
         </>
-      )}
-    </div>
+      )
+      }
+    </div >
   );
 }

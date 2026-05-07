@@ -6,9 +6,9 @@ export type BaseFloorSchema = {
 };
 
 export type FloorSchema = {
-  id: string;
+  id: number;
   name: string;
-  building: string;
+  building_id: number;
   floorplan_url: string;
   scale_factor: number;
   devices: DeviceSchema[];
