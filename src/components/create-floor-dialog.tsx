@@ -1,22 +1,11 @@
 "use client";
 
 import { useForm } from "@tanstack/react-form";
-import * as z from "zod";
-
-import { Button } from "@/components/ui/button";
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { ImageInput } from "@/components/ui/image-input";
-
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { MapPinIcon, PlusIcon } from "lucide-react";
-import { Separator } from "./ui/separator";
-import { ScrollArea } from "./ui/scroll-area";
+import { useState } from "react";
+import * as z from "zod";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -26,11 +15,20 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
+import { ImageInput } from "@/components/ui/image-input";
+import { Input } from "@/components/ui/input";
+import type { BaseFloorSchema } from "@/features/floor-plan/types";
 import { useImageUpload } from "@/hooks/useImageUpload";
 import { BuildingSelect } from "./building-select";
-import { useState } from "react";
-import type { BaseFloorSchema } from "@/features/floor-plan/types";
+import { ScrollArea } from "./ui/scroll-area";
+import { Separator } from "./ui/separator";
 
 const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL!;
 
@@ -88,7 +86,7 @@ export function CreateFloorDialog() {
 
       setOpen(false);
       form.reset();
-    }
+    },
   });
 
   const form = useForm({

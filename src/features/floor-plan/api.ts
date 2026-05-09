@@ -28,7 +28,8 @@ function withFloorPlanViewData(
 
   return {
     ...floor,
-    floorplan_url: floor.floorplan_url ?? fallbackFloorPlan?.floorplan_url ?? null,
+    floorplan_url:
+      floor.floorplan_url ?? fallbackFloorPlan?.floorplan_url ?? null,
     width: fallbackFloorPlan?.width ?? DEFAULT_WIDTH,
     height: fallbackFloorPlan?.height ?? DEFAULT_HEIGHT,
     initialTransform: fallbackFloorPlan?.initialTransform ?? {

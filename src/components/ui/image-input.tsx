@@ -1,8 +1,7 @@
 import { CameraIcon } from "lucide-react";
-
+import { useEffect, useId, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { useEffect, useId, useState } from "react";
 
 type ImageUploadInputProps = Omit<React.ComponentProps<typeof Input>, "type">;
 

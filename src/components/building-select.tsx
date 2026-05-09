@@ -1,3 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
+import { Loader2Icon } from "lucide-react";
+import { Select as SelectPrimitive } from "radix-ui";
 import {
   Select,
   SelectContent,
@@ -8,9 +11,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { BuildingSchema } from "@/features/floor-plan/types";
-import { useQuery } from "@tanstack/react-query";
-import { Select as SelectPrimitive } from "radix-ui";
-import { Loader2Icon } from "lucide-react";
 
 const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL!;
 

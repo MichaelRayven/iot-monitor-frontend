@@ -1,5 +1,5 @@
-import { useState } from "react";
 import type { FormEvent } from "react";
+import { useState } from "react";
 import type { CreateFloorInput } from "../api";
 
 type CreateFloorDialogProps = {
@@ -44,7 +44,9 @@ export function CreateFloorDialog({
       onClose();
     } catch (nextError) {
       setError(
-        nextError instanceof Error ? nextError.message : "Failed to create floor"
+        nextError instanceof Error
+          ? nextError.message
+          : "Failed to create floor"
       );
     } finally {
       setIsSaving(false);

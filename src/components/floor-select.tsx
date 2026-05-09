@@ -1,3 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
+import { Loader2Icon } from "lucide-react";
+import { Select as SelectPrimitive } from "radix-ui";
 import {
   Select,
   SelectContent,
@@ -8,9 +11,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { BaseFloorSchema } from "@/features/floor-plan/types";
-import { useQuery } from "@tanstack/react-query";
-import { Select as SelectPrimitive } from "radix-ui";
-import { Loader2Icon } from "lucide-react";
 
 const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL!;
 
@@ -20,7 +20,7 @@ type FloorSelectProps = {
 
 export function FloorSelect({ buildingId, ...props }: FloorSelectProps) {
   const { isPending, error, data } = useQuery<BaseFloorSchema[]>({
-    queryKey: ["floors"],
+    queryKey: ["floors", buildingId],
     queryFn: () =>
       fetch(API_BASE_URL + `/floors/building/${buildingId}`).then((res) =>
         res.json()

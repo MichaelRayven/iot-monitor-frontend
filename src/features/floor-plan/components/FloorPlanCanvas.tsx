@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
 import type { DragEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Circle,
   Group,
@@ -8,8 +8,8 @@ import {
   Stage,
   Text,
 } from "react-konva";
-import type { FloorPlanTransform, FloorSchema } from "../types";
 import type { DeviceSchema } from "@/features/devices/types";
+import type { FloorPlanTransform, FloorSchema } from "../types";
 
 type FloorPlanCanvasProps = {
   className?: string;
@@ -43,7 +43,7 @@ export function FloorPlanCanvas({
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const devices = floorPlan.devices ?? []
+  const devices = floorPlan.devices ?? [];
 
   useEffect(() => {
     const container = containerRef.current;
@@ -175,9 +175,8 @@ export function FloorPlanCanvas({
               onTransformChange?.({
                 x: event.target.x(),
                 y: event.target.y(),
-                scale: transform.scale
-              }
-              )
+                scale: transform.scale,
+              });
             }}
             onWheel={(event) => {
               if (event.evt.deltaY > 0) {
@@ -185,19 +184,17 @@ export function FloorPlanCanvas({
                   onTransformChange?.({
                     x: transform.x,
                     y: transform.y,
-                    scale: transform.scale - 0.01
-                  }
-                  )
+                    scale: transform.scale - 0.01,
+                  });
                 }
               } else {
                 if (transform.scale < 2.0) {
                   onTransformChange?.({
                     x: transform.x,
                     y: transform.y,
-                    scale: transform.scale + 0.01
-                  })
+                    scale: transform.scale + 0.01,
+                  });
                 }
-
               }
             }}
             width={canvasSize.width}
@@ -205,18 +202,13 @@ export function FloorPlanCanvas({
             x={transform.x}
             y={transform.y}
             scaleX={transform.scale}
-            scaleY={transform.scale}>
+            scaleY={transform.scale}
+          >
             <Layer>
               <Group>
-                {image && (
-                  <KonvaImage
-                    image={image}
-                  />
-                )}
+                {image && <KonvaImage image={image} />}
                 {devices
-                  .filter(
-                    (device) => device.is_stationary
-                  )
+                  .filter((device) => device.is_stationary)
                   .map((device) => (
                     <Group
                       key={device.dev_eui}
@@ -249,8 +241,7 @@ export function FloorPlanCanvas({
             </Layer>
           </Stage>
         </>
-      )
-      }
-    </div >
+      )}
+    </div>
   );
 }

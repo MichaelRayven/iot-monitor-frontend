@@ -19,17 +19,10 @@
     "prepare": "husky"
   },
   "lint-staged": {
-    "*.{js,jsx,ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
+    "*.{js,ts,cjs,mjs,jsx,tsx,json,jsonc,md,html,yml,yaml,css,scss}": [
+      "pnpx @biomejs/biome check --write --no-errors-on-unmatched"
     ],
-    "*.{json,md,html,yml,yaml}": [
-      "prettier --write"
-    ],
-    "*.{css,scss}": [
-      "stylelint --fix",
-      "prettier --write"
-    ]
+    "*.{css,scss}": ["stylelint --fix"]
   },
   "dependencies": {
     "@fontsource-variable/noto-sans": "^5.2.10",
@@ -54,6 +47,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.29.0",
+    "@biomejs/biome": "2.4.14",
     "@eslint/js": "^9.39.4",
     "@rolldown/plugin-babel": "^0.2.2",
     "@types/babel__core": "^7.20.5",
