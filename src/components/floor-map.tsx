@@ -36,7 +36,7 @@ export function FloorMap({ floorId, className }: FloorMapProps) {
   return data ? (
     <FloorPlanCanvas
       className={className}
-      floorPlan={{
+      floor={{
         id: data.id,
         name: data.name,
         building_id: data.building_id,

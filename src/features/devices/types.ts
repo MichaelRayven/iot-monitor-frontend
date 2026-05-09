@@ -1,7 +1,7 @@
 export type DeviceSchema = {
   dev_eui: string;
   name?: string;
-  device_type?: string;
+  device_type: string;
   rssi?: number | null;
   snr?: number | null;
   floor_id?: string | null;

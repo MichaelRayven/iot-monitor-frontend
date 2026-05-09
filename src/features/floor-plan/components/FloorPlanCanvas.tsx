@@ -5,6 +5,7 @@ import {
   Group,
   Image as KonvaImage,
   Layer,
+  Line,
   Stage,
   Text,
 } from "react-konva";
@@ -13,7 +14,7 @@ import type { FloorPlanTransform, FloorSchema } from "../types";
 
 type FloorPlanCanvasProps = {
   className?: string;
-  floorPlan: FloorSchema;
+  floor: FloorSchema;
   transform: FloorPlanTransform;
   onTransformChange?: (transform: FloorPlanTransform) => void;
   onDeviceDrop?: (deviceId: string, x: number, y: number) => void;
@@ -32,7 +33,7 @@ const DEFAULT_CANVAS_SIZE: CanvasSize = {
 
 export function FloorPlanCanvas({
   className,
-  floorPlan,
+  floor: floor,
   transform,
   onTransformChange,
   onDeviceDrop,
@@ -43,7 +44,7 @@ export function FloorPlanCanvas({
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const devices = floorPlan.devices ?? [];
+  const devices = floor.devices ?? [];
 
   useEffect(() => {
     const container = containerRef.current;
@@ -72,7 +73,7 @@ export function FloorPlanCanvas({
 
   useEffect(() => {
     const nextImage = new Image();
-    const imageUrl = floorPlan.floorplan_url;
+    const imageUrl = floor.floorplan_url;
 
     if (!imageUrl) {
       setImage(null);
@@ -92,7 +93,7 @@ export function FloorPlanCanvas({
     return () => {
       setImage(null);
     };
-  }, [floorPlan.floorplan_url]);
+  }, [floor.floorplan_url]);
 
   const toMapCoordinates = (clientX: number, clientY: number) => {
     const container = containerRef.current;
@@ -133,9 +134,6 @@ export function FloorPlanCanvas({
     onDeviceDrop?.(deviceId, coordinates.x, coordinates.y);
   };
 
-  const getDeviceType = (device: DeviceSchema) =>
-    device.device_type ?? device.device_type ?? "unknown";
-
   const getDeviceName = (device: DeviceSchema) => device.name ?? device.dev_eui;
 
   const getDeviceColor = (deviceType: string) => {
@@ -148,6 +146,57 @@ export function FloorPlanCanvas({
     }
 
     return "#16a34a";
+  };
+
+  const renderGrid = () => {
+    if (!image) return null;
+
+    const stageWidth = canvasSize.width;
+    const stageHeight = canvasSize.height;
+    const xPadding = canvasSize.width * (1 / transform.scale);
+    const yPadding = canvasSize.height * (1 / transform.scale);
+    const gridSize = floor.scale_factor;
+
+    // Calculate visible bounds in stage coordinates
+    const stageStartX = -transform.x * (1 / transform.scale) - xPadding;
+    const stageStartY = -transform.y * (1 / transform.scale) - yPadding;
+    const stageEndX =
+      stageStartX + stageWidth * (1 / transform.scale) + xPadding * 2;
+    const stageEndY =
+      stageStartY + stageHeight * (1 / transform.scale) + yPadding * 2;
+
+    // Calculate grid line positions relative to stage origin
+    const firstGridX = Math.ceil(stageStartX / gridSize) * gridSize;
+    const firstGridY = Math.ceil(stageStartY / gridSize) * gridSize;
+
+    const verticalLines = [];
+    const horizontalLines = [];
+
+    // Generate vertical grid lines
+    for (let x = firstGridX; x <= stageEndX; x += gridSize) {
+      verticalLines.push(
+        <Line
+          key={`v-${x}`}
+          points={[x, stageStartY, x, stageEndY]}
+          stroke="rgba(50, 50, 50, 0.25)"
+          strokeWidth={1}
+        />
+      );
+    }
+
+    // Generate horizontal grid lines
+    for (let y = firstGridY; y <= stageEndY; y += gridSize) {
+      horizontalLines.push(
+        <Line
+          key={`h-${y}`}
+          points={[stageStartX, y, stageEndX, y]}
+          stroke="rgba(50, 50, 50, 0.25)"
+          strokeWidth={1}
+        />
+      );
+    }
+
+    return [...verticalLines, ...horizontalLines];
   };
 
   return (
@@ -205,8 +254,9 @@ export function FloorPlanCanvas({
             scaleY={transform.scale}
           >
             <Layer>
+              <Group>{image && <KonvaImage image={image} />}</Group>
+              <Group>{renderGrid()}</Group>
               <Group>
-                {image && <KonvaImage image={image} />}
                 {devices
                   .filter((device) => device.is_stationary)
                   .map((device) => (
@@ -225,15 +275,15 @@ export function FloorPlanCanvas({
                       }}
                     >
                       <Circle
-                        fill={getDeviceColor(getDeviceType(device))}
-                        radius={12}
+                        fill={getDeviceColor(device.device_type)}
+                        radius={6}
                       />
                       <Text
-                        fontSize={12}
+                        fontSize={6}
                         fill="#111827"
                         text={getDeviceName(device)}
-                        x={18}
-                        y={-6}
+                        x={8}
+                        y={-3}
                       />
                     </Group>
                   ))}
