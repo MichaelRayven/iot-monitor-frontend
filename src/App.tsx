@@ -4,8 +4,8 @@ import { BuildingSelect } from "./components/building-select";
 import { CreateBuildingDialog } from "./components/create-building-dialog";
 import { CreateFloorDialog } from "./components/create-floor-dialog";
 import { FloorDeviceList } from "./components/device-list";
-import { FloorSelect } from "./components/floor-select";
 import { FloorMap } from "./components/floor-map";
+import { FloorSelect } from "./components/floor-select";
 import "./index.css";
 import { UpdateFloorDialog } from "./components/update-floor-dialog";
 

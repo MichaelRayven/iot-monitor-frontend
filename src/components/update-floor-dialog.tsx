@@ -1,4 +1,4 @@
-import { useForm, type StandardSchemaV1 } from "@tanstack/react-form";
+import { type StandardSchemaV1, useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { SettingsIcon } from "lucide-react";
 import { useState } from "react";
