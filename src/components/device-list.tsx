@@ -31,8 +31,8 @@ export type FloorDevice = Device & {
   y?: number;
 };
 
-export type FloorDeviceData = FloorDevice & {
-  data: { [item: string]: unknown };
+export type FloorDeviceWithData = FloorDevice & {
+  data: { [item: string]: unknown }[];
 };
 
 type DeviceListItemProps = {

@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import type { FloorDevice } from "../device-list";
 import { DeviceSelect } from "../device-select";
 import { Switch } from "../ui/switch";
+import { DeviceTypeSelect } from "../device-type-select";
 
 const numericStringSchema = z
   .string()
@@ -202,14 +203,13 @@ export function AddFloorDeviceDialog({ floorId }: { floorId: number }) {
                 return (
                   <Field data-invalid={isInvalid}>
                     <FieldLabel htmlFor={field.name}>Тип устройства</FieldLabel>
-                    <Input
+
+                    <DeviceTypeSelect
                       id={field.name}
                       name={field.name}
                       value={field.state.value}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      aria-invalid={isInvalid}
-                      placeholder="MS0101"
+                      onValueChange={field.handleChange}
+                      isInvalid={isInvalid}
                       autoComplete="off"
                     />
                     {isInvalid && (

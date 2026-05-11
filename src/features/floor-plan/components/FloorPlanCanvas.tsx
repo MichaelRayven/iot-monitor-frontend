@@ -19,6 +19,7 @@ type FloorPlanCanvasProps = {
   onTransformChange?: (transform: FloorPlanTransform) => void;
   onDeviceDrop?: (deviceId: string, x: number, y: number) => void;
   onDeviceMove?: (deviceId: string, x: number, y: number) => void;
+  onDeviceClick?: (deviceId: number) => void;
 };
 
 type CanvasSize = {
@@ -37,6 +38,7 @@ export function FloorPlanCanvas({
   transform,
   onTransformChange,
   onDeviceDrop,
+  onDeviceClick,
   onDeviceMove,
 }: FloorPlanCanvasProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -272,6 +274,10 @@ export function FloorPlanCanvas({
                           event.target.x(),
                           event.target.y()
                         );
+                      }}
+                      onClick={(event) => {
+                        event.cancelBubble = true;
+                        onDeviceClick?.(device.id)
                       }}
                     >
                       <Circle
