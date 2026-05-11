@@ -1,4 +1,4 @@
-import type { FormEvent } from "react";
+import type { SubmitEventHandler } from "react";
 import { useState } from "react";
 import type { CreateFloorInput } from "../api";
 
@@ -19,7 +19,7 @@ export function CreateFloorDialog({
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit: SubmitEventHandler<HTMLFormElement> = async (event) => {
     event.preventDefault();
 
     const nextName = name.trim();

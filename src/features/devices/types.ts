@@ -1,4 +1,5 @@
 export type DeviceSchema = {
+  id: number;
   dev_eui: string;
   name?: string;
   device_type: string;

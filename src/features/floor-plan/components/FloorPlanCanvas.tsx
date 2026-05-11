@@ -17,8 +17,8 @@ type FloorPlanCanvasProps = {
   floor: FloorSchema;
   transform: FloorPlanTransform;
   onTransformChange?: (transform: FloorPlanTransform) => void;
-  onDeviceDrop?: (deviceId: string, x: number, y: number) => void;
-  onDeviceMove?: (deviceId: string, x: number, y: number) => void;
+  onDeviceDrop?: (deviceId: number, x: number, y: number) => void;
+  onDeviceMove?: (deviceId: number, x: number, y: number) => void;
   onDeviceClick?: (deviceId: number) => void;
 };
 
@@ -270,7 +270,7 @@ export function FloorPlanCanvas({
                       onDragEnd={(event) => {
                         event.cancelBubble = true;
                         onDeviceMove?.(
-                          device.dev_eui,
+                          device.id,
                           event.target.x(),
                           event.target.y()
                         );

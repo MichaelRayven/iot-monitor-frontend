@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Fragment, useState } from "react";
 import { FloorPlanCanvas } from "@/features/floor-plan/components/FloorPlanCanvas";
 import type { FloorSchema } from "@/features/floor-plan/types";
@@ -19,6 +19,34 @@ export function FloorMap({ floorId, className }: FloorMapProps) {
     y: 0,
     scale: 0.5,
   });
+
+  const updateDevicePosition = useMutation({
+    mutationFn: async (data: {
+      deviceId: number;
+      x?: number;
+      y?: number;
+    }) => {
+      const response = await fetch(API_BASE_URL + `/floors/devices/${data.deviceId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          x: data.x,
+          y: data.y
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create floor");
+      }
+
+      return response.json();
+    },
+    onSuccess: async (data: FloorSchema) => {
+
+    },
+  })
 
   const { data: deviceData } = useQuery<FloorDeviceWithData>({
     enabled: !!selectedDeviceId,
@@ -63,6 +91,13 @@ export function FloorMap({ floorId, className }: FloorMapProps) {
         onTransformChange={setTransform}
         onDeviceClick={(id) => {
           setSelectedDeviceId(id);
+        }}
+        onDeviceMove={async (id, x, y) => {
+          await updateDevicePosition.mutateAsync({
+            deviceId: id,
+            x: x,
+            y: y
+          })
         }}
       />
       {deviceData && (<aside className="absolute top-0 bottom-0 w-80 overflow-y-auto right-0">
