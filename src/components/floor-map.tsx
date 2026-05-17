@@ -4,7 +4,7 @@ import { FloorplanCanvas } from "@/components/floorplan-canvas";
 import { API_BASE_URL } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import type { FloorSchema } from "@/types/floor";
-import type { Device, FloorDeviceWithData } from "./device-list";
+import type { FloorDeviceWithData } from "./device-list";
 import { Card, CardContent } from "./ui/card";
 
 type FloorMapProps = {

@@ -133,8 +133,8 @@
 .selected-device div {
   align-items: center;
   display: flex;
-  justify-content: space-between;
   gap: 12px;
+  justify-content: space-between;
 }
 
 .selected-device dt {

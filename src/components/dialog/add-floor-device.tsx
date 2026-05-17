@@ -24,8 +24,8 @@ import {
 import { Input } from "@/components/ui/input";
 import type { FloorDevice } from "../device-list";
 import { DeviceSelect } from "../device-select";
-import { Switch } from "../ui/switch";
 import { DeviceTypeSelect } from "../device-type-select";
+import { Switch } from "../ui/switch";
 
 const numericStringSchema = z
   .string()
