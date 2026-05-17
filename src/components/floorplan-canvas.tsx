@@ -9,16 +9,17 @@ import {
   Stage,
   Text,
 } from "react-konva";
-import type { DeviceSchema } from "@/features/devices/types";
-import type { FloorPlanTransform, FloorSchema } from "../types";
+import type { FloorDevice } from "@/types/device";
+import type { FloorPlanTransform, FloorSchema } from "@/types/floor";
 
 type FloorPlanCanvasProps = {
   className?: string;
   floor: FloorSchema;
   transform: FloorPlanTransform;
   onTransformChange?: (transform: FloorPlanTransform) => void;
-  onDeviceDrop?: (deviceId: string, x: number, y: number) => void;
-  onDeviceMove?: (deviceId: string, x: number, y: number) => void;
+  onDeviceDrop?: (deviceId: number, x: number, y: number) => void;
+  onDeviceMove?: (deviceId: number, x: number, y: number) => void;
+  onDeviceClick?: (deviceId: number) => void;
 };
 
 type CanvasSize = {
@@ -31,11 +32,12 @@ const DEFAULT_CANVAS_SIZE: CanvasSize = {
   height: 560,
 };
 
-export function FloorPlanCanvas({
+export function FloorplanCanvas({
   className,
-  floor: floor,
+  floor,
   transform,
   onTransformChange,
+  onDeviceClick,
   onDeviceDrop,
   onDeviceMove,
 }: FloorPlanCanvasProps) {
@@ -85,6 +87,7 @@ export function FloorPlanCanvas({
     nextImage.onload = () => {
       setImage(nextImage);
     };
+
     nextImage.onerror = () => {
       setError(`Failed to load floor plan image: ${imageUrl}`);
     };
@@ -131,10 +134,10 @@ export function FloorPlanCanvas({
       return;
     }
 
-    onDeviceDrop?.(deviceId, coordinates.x, coordinates.y);
+    onDeviceDrop?.(Number(deviceId), coordinates.x, coordinates.y);
   };
 
-  const getDeviceName = (device: DeviceSchema) => device.name ?? device.dev_eui;
+  const getDeviceName = (device: FloorDevice) => device.name ?? device.dev_eui;
 
   const getDeviceColor = (deviceType: string) => {
     if (deviceType === "alarm-button") {
@@ -151,11 +154,13 @@ export function FloorPlanCanvas({
   const renderGrid = () => {
     if (!image) return null;
 
+    const gridSize = 50; // Fixed visual size in pixels
+    if (gridSize * transform.scale < 10) return null; // Hide if visual size is < 10px
+
     const stageWidth = canvasSize.width;
     const stageHeight = canvasSize.height;
     const xPadding = canvasSize.width * (1 / transform.scale);
     const yPadding = canvasSize.height * (1 / transform.scale);
-    const gridSize = floor.scale_factor;
 
     // Calculate visible bounds in stage coordinates
     const stageStartX = -transform.x * (1 / transform.scale) - xPadding;
@@ -171,6 +176,7 @@ export function FloorPlanCanvas({
 
     const verticalLines = [];
     const horizontalLines = [];
+    const strokeWidth = 1 / transform.scale; // Maintain 1px visual thickness
 
     // Generate vertical grid lines
     for (let x = firstGridX; x <= stageEndX; x += gridSize) {
@@ -179,7 +185,7 @@ export function FloorPlanCanvas({
           key={`v-${x}`}
           points={[x, stageStartY, x, stageEndY]}
           stroke="rgba(50, 50, 50, 0.25)"
-          strokeWidth={1}
+          strokeWidth={strokeWidth}
         />
       );
     }
@@ -191,7 +197,7 @@ export function FloorPlanCanvas({
           key={`h-${y}`}
           points={[stageStartX, y, stageEndX, y]}
           stroke="rgba(50, 50, 50, 0.25)"
-          strokeWidth={1}
+          strokeWidth={strokeWidth}
         />
       );
     }
@@ -199,17 +205,18 @@ export function FloorPlanCanvas({
     return [...verticalLines, ...horizontalLines];
   };
 
+  const imageScale = floor.scale_factor ? 50 / floor.scale_factor : 1;
+
   return (
     <div
       className={className}
       ref={containerRef}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
-      onWheel={(e) => e.preventDefault()}
     >
       {error ? (
         <p className="canvas-message" role="alert">
-          Failed to load floor plan image.
+          {error}
         </p>
       ) : (
         <>
@@ -228,23 +235,37 @@ export function FloorPlanCanvas({
               });
             }}
             onWheel={(event) => {
-              if (event.evt.deltaY > 0) {
-                if (transform.scale > 0.5) {
-                  onTransformChange?.({
-                    x: transform.x,
-                    y: transform.y,
-                    scale: transform.scale - 0.01,
-                  });
-                }
-              } else {
-                if (transform.scale < 2.0) {
-                  onTransformChange?.({
-                    x: transform.x,
-                    y: transform.y,
-                    scale: transform.scale + 0.01,
-                  });
-                }
-              }
+              event.evt.preventDefault();
+              const stage = event.target.getStage();
+              if (!stage) return;
+
+              const oldScale = transform.scale;
+              const pointer = stage.getPointerPosition();
+
+              if (!pointer) return;
+
+              const mousePointTo = {
+                x: (pointer.x - stage.x()) / oldScale,
+                y: (pointer.y - stage.y()) / oldScale,
+              };
+
+              const scaleBy = 1.05;
+              const newScale =
+                event.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy;
+
+              // constrain scale
+              if (newScale < 0.2 || newScale > 5) return;
+
+              const newPos = {
+                x: pointer.x - mousePointTo.x * newScale,
+                y: pointer.y - mousePointTo.y * newScale,
+              };
+
+              onTransformChange?.({
+                x: newPos.x,
+                y: newPos.y,
+                scale: newScale,
+              });
             }}
             width={canvasSize.width}
             height={canvasSize.height}
@@ -254,7 +275,15 @@ export function FloorPlanCanvas({
             scaleY={transform.scale}
           >
             <Layer>
-              <Group>{image && <KonvaImage image={image} />}</Group>
+              <Group>
+                {image && (
+                  <KonvaImage
+                    image={image}
+                    scaleX={imageScale}
+                    scaleY={imageScale}
+                  />
+                )}
+              </Group>
               <Group>{renderGrid()}</Group>
               <Group>
                 {devices
@@ -268,22 +297,26 @@ export function FloorPlanCanvas({
                       onDragEnd={(event) => {
                         event.cancelBubble = true;
                         onDeviceMove?.(
-                          device.dev_eui,
+                          device.id,
                           event.target.x(),
                           event.target.y()
                         );
                       }}
+                      onClick={(event) => {
+                        event.cancelBubble = true;
+                        onDeviceClick?.(device.id);
+                      }}
                     >
                       <Circle
                         fill={getDeviceColor(device.device_type)}
-                        radius={6}
+                        radius={16}
                       />
                       <Text
-                        fontSize={6}
+                        fontSize={16}
                         fill="#111827"
                         text={getDeviceName(device)}
-                        x={8}
-                        y={-3}
+                        x={24}
+                        y={-8}
                       />
                     </Group>
                   ))}

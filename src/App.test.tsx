@@ -1,7 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { render } from "@testing-library/react";
+import { test } from "vitest";
+import App from "./App";
 
-describe("App", () => {
-  it("Example test", () => {
-    expect(true).toBe(true);
-  });
+test("renders app without crashing", () => {
+  render(<App />);
 });

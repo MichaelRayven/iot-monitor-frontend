@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { BaseFloorSchema } from "@/features/floor-plan/types";
+import type { BaseFloorSchema } from "@/types/floor";
 
 const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL!;
 

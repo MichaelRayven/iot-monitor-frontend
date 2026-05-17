@@ -2,7 +2,7 @@
 
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { MapPinIcon, PlusIcon } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 import { useState } from "react";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
@@ -24,11 +24,10 @@ import {
 } from "@/components/ui/field";
 import { ImageInput } from "@/components/ui/image-input";
 import { Input } from "@/components/ui/input";
-import type { BaseFloorSchema } from "@/features/floor-plan/types";
 import { useImageUpload } from "@/hooks/useImageUpload";
+import type { BaseFloorSchema } from "@/types/floor";
 import { BuildingSelect } from "./building-select";
-import { ScrollArea } from "./ui/scroll-area";
-import { Separator } from "./ui/separator";
+import { ScaleToolDialog } from "./dialog/scale-tool-dialog";
 
 const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL!;
 
@@ -54,6 +53,8 @@ const formSchema = z.object({
 
 export function CreateFloorDialog() {
   const [open, setOpen] = useState(false);
+  const [scaleToolOpen, setScaleToolOpen] = useState(false);
+  const [tempImageUrl, setTempImageUrl] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const { upload } = useImageUpload();
 
@@ -197,9 +198,16 @@ export function CreateFloorDialog() {
                       id={field.name}
                       name={field.name}
                       onBlur={field.handleBlur}
-                      onChange={async (e) =>
-                        field.handleChange(e.target.files?.[0] ?? null)
-                      }
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0] ?? null;
+                        field.handleChange(file);
+                        if (file) {
+                          const url = URL.createObjectURL(file);
+                          setTempImageUrl(url);
+                        } else {
+                          setTempImageUrl(null);
+                        }
+                      }}
                       aria-invalid={isInvalid}
                     />
                     {isInvalid && (
@@ -224,22 +232,32 @@ export function CreateFloorDialog() {
                     <FieldDescription>
                       Маштаб изображения в формате X пикселей к 1 метру.
                     </FieldDescription>
-                    <Input
-                      id={field.name}
-                      name={field.name}
-                      value={field.state.value}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => {
-                        const value = Number.parseInt(e.target.value);
-                        if (e.target.value && (isNaN(value) || value < 1))
-                          return;
-                        else field.handleChange(value);
-                      }}
-                      aria-invalid={isInvalid}
-                      type="number"
-                      placeholder="100"
-                      autoComplete="off"
-                    />
+                    <div className="flex gap-2">
+                      <Input
+                        id={field.name}
+                        name={field.name}
+                        value={field.state.value}
+                        onBlur={field.handleBlur}
+                        onChange={(e) => {
+                          const value = Number.parseInt(e.target.value);
+                          if (e.target.value && (isNaN(value) || value < 1))
+                            return;
+                          else field.handleChange(value);
+                        }}
+                        aria-invalid={isInvalid}
+                        type="number"
+                        placeholder="100"
+                        autoComplete="off"
+                      />
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        disabled={!tempImageUrl}
+                        onClick={() => setScaleToolOpen(true)}
+                      >
+                        Задать
+                      </Button>
+                    </div>
                     {isInvalid && (
                       <FieldError errors={field.state.meta.errors} />
                     )}
@@ -255,6 +273,17 @@ export function CreateFloorDialog() {
           </DialogFooter>
         </form>
       </DialogContent>
+
+      {tempImageUrl && (
+        <ScaleToolDialog
+          open={scaleToolOpen}
+          onOpenChange={setScaleToolOpen}
+          imageUrl={tempImageUrl}
+          onScaleDetermined={(scaleFactor) => {
+            form.setFieldValue("scale_factor", scaleFactor);
+          }}
+        />
+      )}
     </Dialog>
   );
 }

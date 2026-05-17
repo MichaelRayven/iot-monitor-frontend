@@ -1,4 +1,4 @@
-import type { DeviceSchema } from "../devices/types";
+import type { FloorDevice } from "./device";
 
 export type BaseFloorSchema = {
   id: number;
@@ -11,19 +11,11 @@ export type FloorSchema = {
   building_id: number;
   floorplan_url: string;
   scale_factor: number;
-  devices: DeviceSchema[];
+  devices: FloorDevice[];
 };
 
 export type FloorPlanTransform = {
   x: number;
   y: number;
   scale: number;
-};
-
-// Buildings
-
-export type BuildingSchema = {
-  id: number;
-  name: string;
-  address: string;
 };
