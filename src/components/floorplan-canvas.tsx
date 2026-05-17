@@ -10,7 +10,10 @@ import {
   Text,
 } from "react-konva";
 import type { DeviceSchema } from "@/features/devices/types";
-import type { FloorPlanTransform, FloorSchema } from "../types";
+import type {
+  FloorPlanTransform,
+  FloorSchema,
+} from "../features/floor-plan/types";
 
 type FloorPlanCanvasProps = {
   className?: string;
@@ -32,13 +35,13 @@ const DEFAULT_CANVAS_SIZE: CanvasSize = {
   height: 560,
 };
 
-export function FloorPlanCanvas({
+export function FloorplanCanvas({
   className,
-  floor: floor,
+  floor,
   transform,
   onTransformChange,
-  onDeviceDrop,
   onDeviceClick,
+  onDeviceDrop,
   onDeviceMove,
 }: FloorPlanCanvasProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -133,7 +136,7 @@ export function FloorPlanCanvas({
       return;
     }
 
-    onDeviceDrop?.(deviceId, coordinates.x, coordinates.y);
+    onDeviceDrop?.(Number(deviceId), coordinates.x, coordinates.y);
   };
 
   const getDeviceName = (device: DeviceSchema) => device.name ?? device.dev_eui;
@@ -277,7 +280,7 @@ export function FloorPlanCanvas({
                       }}
                       onClick={(event) => {
                         event.cancelBubble = true;
-                        onDeviceClick?.(device.id)
+                        onDeviceClick?.(device.id);
                       }}
                     >
                       <Circle
