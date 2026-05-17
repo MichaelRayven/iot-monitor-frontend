@@ -1,10 +1,10 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Fragment, useState } from "react";
 import { FloorplanCanvas } from "@/components/floorplan-canvas";
 import { API_BASE_URL } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import type { FloorDevice, FloorDeviceWithData } from "@/types/device";
 import type { FloorSchema } from "@/types/floor";
-import type { FloorDeviceWithData } from "./device-list";
 import { Card, CardContent } from "./ui/card";
 
 type FloorMapProps = {
@@ -13,6 +13,7 @@ type FloorMapProps = {
 };
 
 export function FloorMap({ floorId, className }: FloorMapProps) {
+  const queryClient = useQueryClient();
   const [selectedDeviceId, setSelectedDeviceId] = useState<number | null>(null);
   const [transform, setTransform] = useState({
     x: 0,
@@ -30,24 +31,37 @@ export function FloorMap({ floorId, className }: FloorMapProps) {
     },
   });
 
+  const { data: deviceList } = useQuery<FloorDevice[]>({
+    queryKey: ["floor-devices", floorId],
+    queryFn: async () => {
+      const response = await fetch(API_BASE_URL + `/floors/${floorId}/devices`);
+      return await response.json();
+    },
+  });
+
   const { isPending, data } = useQuery<FloorSchema>({
     queryKey: ["selected-floor", floorId],
     queryFn: async () => {
-      return fetch(API_BASE_URL + `/floors/device/${floorId}`).then((res) =>
-        res.json()
-      );
+      const response = await fetch(API_BASE_URL + `/floors/${floorId}`);
+      const data = await response.json();
+      console.log(data);
+
+      return data;
     },
   });
 
   const updateFloorDevice = useMutation({
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["floor-devices"] });
+    },
     mutationFn: async ({
       deviceId,
       ...values
     }: {
       deviceId: number;
-      floorId?: number;
-      deviceType?: string;
-      isStationary?: boolean;
+      floor_id?: number;
+      device_type?: string;
+      is_stationary?: boolean;
       x?: number;
       y?: number;
     }) => {
@@ -88,19 +102,38 @@ export function FloorMap({ floorId, className }: FloorMapProps) {
           building_id: data.building_id,
           scale_factor: data.scale_factor,
           floorplan_url: data.floorplan_url,
-          devices: data.devices,
+          devices: deviceList || [],
         }}
         transform={transform}
         onTransformChange={setTransform}
         onDeviceClick={(id) => {
           setSelectedDeviceId(id);
         }}
+        onDeviceDrop={async (id, x, y) => {
+          const device = deviceList?.find((d) => d.id === id);
+          if (device) {
+            await updateFloorDevice.mutateAsync({
+              deviceId: id,
+              floor_id: device.floor_id ? Number(device.floor_id) : undefined,
+              device_type: device.device_type ?? "",
+              is_stationary: true,
+              x: Math.round(x),
+              y: Math.round(y),
+            });
+          }
+        }}
         onDeviceMove={async (id, x, y) => {
-          await updateFloorDevice.mutateAsync({
-            deviceId: id,
-            x: x,
-            y: y,
-          });
+          const device = data.devices?.find((d) => d.id === id);
+          if (device) {
+            await updateFloorDevice.mutateAsync({
+              deviceId: id,
+              floor_id: device.floor_id ? Number(device.floor_id) : undefined,
+              device_type: device.device_type ?? "",
+              is_stationary: true,
+              x: Math.round(x),
+              y: Math.round(y),
+            });
+          }
         }}
       />
       {deviceData && (

@@ -1,13 +1,20 @@
-export type DeviceSchema = {
-  id: number;
+export type Device = {
   dev_eui: string;
   name?: string;
+  rssi: number;
+  snr: number;
+  last_data_ts: number;
+};
+
+export type FloorDevice = Device & {
+  id: number;
+  floor_id: number;
   device_type: string;
-  rssi?: number | null;
-  snr?: number | null;
-  floor_id?: string | null;
-  is_stationary?: boolean | null;
-  x?: number | null;
-  y?: number | null;
-  data?: Record<string, unknown>[] | null;
+  is_stationary: boolean;
+  x?: number;
+  y?: number;
+};
+
+export type FloorDeviceWithData = FloorDevice & {
+  data: { [item: string]: unknown }[];
 };

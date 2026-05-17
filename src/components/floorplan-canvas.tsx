@@ -9,7 +9,7 @@ import {
   Stage,
   Text,
 } from "react-konva";
-import type { DeviceSchema } from "@/types/device";
+import type { FloorDevice } from "@/types/device";
 import type { FloorPlanTransform, FloorSchema } from "@/types/floor";
 
 type FloorPlanCanvasProps = {
@@ -87,6 +87,7 @@ export function FloorplanCanvas({
     nextImage.onload = () => {
       setImage(nextImage);
     };
+
     nextImage.onerror = () => {
       setError(`Failed to load floor plan image: ${imageUrl}`);
     };
@@ -136,7 +137,7 @@ export function FloorplanCanvas({
     onDeviceDrop?.(Number(deviceId), coordinates.x, coordinates.y);
   };
 
-  const getDeviceName = (device: DeviceSchema) => device.name ?? device.dev_eui;
+  const getDeviceName = (device: FloorDevice) => device.name ?? device.dev_eui;
 
   const getDeviceColor = (deviceType: string) => {
     if (deviceType === "alarm-button") {
@@ -212,11 +213,10 @@ export function FloorplanCanvas({
       ref={containerRef}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
-      onWheel={(e) => e.preventDefault()}
     >
       {error ? (
         <p className="canvas-message" role="alert">
-          Failed to load floor plan image.
+          {error}
         </p>
       ) : (
         <>
