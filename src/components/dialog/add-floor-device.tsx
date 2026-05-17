@@ -22,7 +22,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import type { FloorDevice } from "@/types/device";
+import type { FloorDevice } from "../device-list";
 import { DeviceSelect } from "../device-select";
 import { DeviceTypeSelect } from "../device-type-select";
 import { Switch } from "../ui/switch";

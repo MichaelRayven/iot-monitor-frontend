@@ -9,7 +9,7 @@ import {
   Stage,
   Text,
 } from "react-konva";
-import type { FloorDevice } from "@/types/device";
+import type { DeviceSchema } from "@/types/device";
 import type { FloorPlanTransform, FloorSchema } from "@/types/floor";
 
 type FloorPlanCanvasProps = {
@@ -87,7 +87,6 @@ export function FloorplanCanvas({
     nextImage.onload = () => {
       setImage(nextImage);
     };
-
     nextImage.onerror = () => {
       setError(`Failed to load floor plan image: ${imageUrl}`);
     };
@@ -137,7 +136,7 @@ export function FloorplanCanvas({
     onDeviceDrop?.(Number(deviceId), coordinates.x, coordinates.y);
   };
 
-  const getDeviceName = (device: FloorDevice) => device.name ?? device.dev_eui;
+  const getDeviceName = (device: DeviceSchema) => device.name ?? device.dev_eui;
 
   const getDeviceColor = (deviceType: string) => {
     if (deviceType === "alarm-button") {
@@ -213,10 +212,11 @@ export function FloorplanCanvas({
       ref={containerRef}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
+      onWheel={(e) => e.preventDefault()}
     >
       {error ? (
         <p className="canvas-message" role="alert">
-          {error}
+          Failed to load floor plan image.
         </p>
       ) : (
         <>
@@ -235,23 +235,37 @@ export function FloorplanCanvas({
               });
             }}
             onWheel={(event) => {
-              if (event.evt.deltaY > 0) {
-                if (transform.scale > 0.25) {
-                  onTransformChange?.({
-                    x: transform.x,
-                    y: transform.y,
-                    scale: transform.scale - 0.05,
-                  });
-                }
-              } else {
-                if (transform.scale < 2.0) {
-                  onTransformChange?.({
-                    x: transform.x,
-                    y: transform.y,
-                    scale: transform.scale + 0.05,
-                  });
-                }
-              }
+              event.evt.preventDefault();
+              const stage = event.target.getStage();
+              if (!stage) return;
+
+              const oldScale = transform.scale;
+              const pointer = stage.getPointerPosition();
+
+              if (!pointer) return;
+
+              const mousePointTo = {
+                x: (pointer.x - stage.x()) / oldScale,
+                y: (pointer.y - stage.y()) / oldScale,
+              };
+
+              const scaleBy = 1.05;
+              const newScale =
+                event.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy;
+
+              // constrain scale
+              if (newScale < 0.1 || newScale > 5.0) return;
+
+              const newPos = {
+                x: pointer.x - mousePointTo.x * newScale,
+                y: pointer.y - mousePointTo.y * newScale,
+              };
+
+              onTransformChange?.({
+                x: newPos.x,
+                y: newPos.y,
+                scale: newScale,
+              });
             }}
             width={canvasSize.width}
             height={canvasSize.height}
@@ -295,14 +309,14 @@ export function FloorplanCanvas({
                     >
                       <Circle
                         fill={getDeviceColor(device.device_type)}
-                        radius={16}
+                        radius={6}
                       />
                       <Text
-                        fontSize={12}
+                        fontSize={6}
                         fill="#111827"
                         text={getDeviceName(device)}
-                        x={24}
-                        y={-6}
+                        x={8}
+                        y={-3}
                       />
                     </Group>
                   ))}

@@ -24,7 +24,7 @@ const App = () => {
               <div className="flex gap-2">
                 <BuildingSelect
                   onValueChange={(value) =>
-                    setBuildingId(value ? Number(value) : null)
+                    setBuildingId(Number.parseInt(value))
                   }
                 />
                 <CreateBuildingDialog />
@@ -33,7 +33,7 @@ const App = () => {
                 <div className="flex gap-2">
                   <FloorSelect
                     onValueChange={(value) =>
-                      setFloorId(value ? Number(value) : null)
+                      setFloorId(Number.parseInt(value))
                     }
                     buildingId={buildingId}
                   />
