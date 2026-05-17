@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { FloorplanCanvas } from "@/components/floorplan-canvas";
 import { cn } from "@/lib/utils";
 import {
@@ -8,9 +8,11 @@ import {
   getFloorDevices,
   updateFloorDevice,
 } from "@/services";
+import { setupWebSocket } from "@/services/websocket";
 import { useAppStore } from "@/stores/app";
 import type { FloorDevice, FloorDeviceWithData } from "@/types/device";
 import type { FloorSchema } from "@/types/floor";
+import { DeviceDataSidebar } from "./device-data-sidebar";
 import { Card, CardContent } from "./ui/card";
 
 type FloorMapProps = {
@@ -21,6 +23,11 @@ type FloorMapProps = {
 export function FloorMap({ floorId, className }: FloorMapProps) {
   const queryClient = useQueryClient();
   const { selectedDeviceId, setSelectedDeviceId } = useAppStore();
+
+  useEffect(() => {
+    const cleanup = setupWebSocket(floorId, queryClient);
+    return cleanup;
+  }, [floorId, queryClient]);
   const [transform, setTransform] = useState({
     x: 0,
     y: 0,
@@ -113,27 +120,10 @@ export function FloorMap({ floorId, className }: FloorMapProps) {
         }}
       />
       {deviceData && (
-        <aside className="absolute top-0 bottom-0 w-80 overflow-y-auto right-0">
-          <div className="p-4 h-full">
-            <Card>
-              <CardContent>
-                {deviceData.data.map((item, idx) => (
-                  <Fragment key={idx}>
-                    {Object.entries(item).map((item, idx) => (
-                      <div key={idx} className="flex gap-2">
-                        <p>{item[0]}</p>
-                        <p>{String(item[1])}</p>
-                      </div>
-                    ))}
-                    {idx !== deviceData.data.length - 1 && (
-                      <hr className="w-4/5 h-0.5 bg-border mx-auto my-2" />
-                    )}
-                  </Fragment>
-                ))}
-              </CardContent>
-            </Card>
-          </div>
-        </aside>
+        <DeviceDataSidebar
+          deviceData={deviceData}
+          onClose={() => setSelectedDeviceId(null)}
+        />
       )}
     </div>
   ) : (

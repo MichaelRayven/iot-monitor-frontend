@@ -13,6 +13,16 @@ export type FloorDevice = Device & {
   is_stationary: boolean;
   x?: number;
   y?: number;
+  // Dynamic payload from websocket that can indicate alarms
+  send_reason?: number;
+  mode?: number;
+  // Payload for Smart Badge positioning
+  beacons?: {
+    mac_or_id: string;
+    battery_percent: number;
+    temperature_c: number;
+    humidity_percent: number;
+  }[];
 };
 
 export type FloorDeviceWithData = FloorDevice & {
