@@ -19,7 +19,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import type { FloorDevice } from "../device-list";
+import type { FloorDevice } from "@/types/device";
 import { DeviceTypeSelect } from "../device-type-select";
 import { Switch } from "../ui/switch";
 
@@ -106,7 +106,6 @@ export function UpdateFloorDeviceDialog({
       }).then((res) => res.json()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["floor-devices"] });
-      queryClient.invalidateQueries({ queryKey: ["selected-floor"] });
       onOpenChange(false);
     },
   });

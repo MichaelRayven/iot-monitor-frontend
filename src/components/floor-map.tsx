@@ -3,8 +3,8 @@ import { Fragment, useState } from "react";
 import { FloorplanCanvas } from "@/components/floorplan-canvas";
 import { API_BASE_URL } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import type { FloorDevice, FloorDeviceWithData } from "@/types/device";
 import type { FloorSchema } from "@/types/floor";
-import type { FloorDeviceWithData } from "./device-list";
 import { Card, CardContent } from "./ui/card";
 
 type FloorMapProps = {
@@ -31,19 +31,28 @@ export function FloorMap({ floorId, className }: FloorMapProps) {
     },
   });
 
+  const { data: deviceList } = useQuery<FloorDevice[]>({
+    queryKey: ["floor-devices", floorId],
+    queryFn: async () => {
+      const response = await fetch(API_BASE_URL + `/floors/${floorId}/devices`);
+      return await response.json();
+    },
+  });
+
   const { isPending, data } = useQuery<FloorSchema>({
     queryKey: ["selected-floor", floorId],
     queryFn: async () => {
-      return fetch(API_BASE_URL + `/floors/device/${floorId}`).then((res) =>
-        res.json()
-      );
+      const response = await fetch(API_BASE_URL + `/floors/${floorId}`);
+      const data = await response.json();
+      console.log(data);
+
+      return data;
     },
   });
 
   const updateFloorDevice = useMutation({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["floor-devices"] });
-      queryClient.invalidateQueries({ queryKey: ["selected-floor"] });
     },
     mutationFn: async ({
       deviceId,
@@ -93,7 +102,7 @@ export function FloorMap({ floorId, className }: FloorMapProps) {
           building_id: data.building_id,
           scale_factor: data.scale_factor,
           floorplan_url: data.floorplan_url,
-          devices: data.devices,
+          devices: deviceList || [],
         }}
         transform={transform}
         onTransformChange={setTransform}
@@ -101,7 +110,7 @@ export function FloorMap({ floorId, className }: FloorMapProps) {
           setSelectedDeviceId(id);
         }}
         onDeviceDrop={async (id, x, y) => {
-          const device = data.devices?.find((d) => d.id === id);
+          const device = deviceList?.find((d) => d.id === id);
           if (device) {
             await updateFloorDevice.mutateAsync({
               deviceId: id,

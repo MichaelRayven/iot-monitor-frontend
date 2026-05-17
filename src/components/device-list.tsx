@@ -1,7 +1,16 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import clsx from "clsx";
-import { MapPinIcon } from "lucide-react";
+import {
+  LockIcon,
+  MapPinIcon,
+  PencilIcon,
+  Trash2Icon,
+  UnlockIcon,
+} from "lucide-react";
+import { useState } from "react";
+import type { Device, FloorDevice } from "@/types/device";
 import { AddFloorDeviceDialog } from "./dialog/add-floor-device";
+import { UpdateFloorDeviceDialog } from "./dialog/update-floor-device";
 import {
   Card,
   CardAction,
@@ -9,31 +18,16 @@ import {
   CardHeader,
   CardTitle,
 } from "./ui/card";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "./ui/context-menu";
 import { ScrollArea } from "./ui/scroll-area";
 import { Separator } from "./ui/separator";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-export type Device = {
-  dev_eui: string;
-  name?: string;
-  rssi: number;
-  snr: number;
-  last_data_ts: number;
-};
-
-export type FloorDevice = Device & {
-  id: number;
-  floor_id: number;
-  device_type?: string;
-  is_stationary: boolean;
-  x?: number;
-  y?: number;
-};
-
-export type FloorDeviceWithData = FloorDevice & {
-  data: { [item: string]: unknown }[];
-};
 
 type DeviceListItemProps = {
   device?: FloorDevice;
@@ -46,17 +40,6 @@ type DeviceListItemProps = {
   x?: number;
   y?: number;
 };
-
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { LockIcon, PencilIcon, Trash2Icon, UnlockIcon } from "lucide-react";
-import { useState } from "react";
-import { UpdateFloorDeviceDialog } from "./dialog/update-floor-device";
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuTrigger,
-} from "./ui/context-menu";
 
 export function DeviceListItem({
   device,
