@@ -19,6 +19,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { updateFloorDevice } from "@/services";
 import type { FloorDevice } from "@/types/device";
 import { DeviceTypeSelect } from "../device-type-select";
 import { Switch } from "../ui/switch";
@@ -73,8 +74,6 @@ const parseNumericInput = (input: string) => {
   }
 };
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
 type UpdateFloorDeviceDialogProps = {
   device: FloorDevice;
   open: boolean;
@@ -88,7 +87,7 @@ export function UpdateFloorDeviceDialog({
 }: UpdateFloorDeviceDialogProps) {
   const queryClient = useQueryClient();
 
-  const updateDevice = useMutation({
+  const updateDeviceMutation = useMutation({
     mutationKey: ["update-floor-device", device.id],
     mutationFn: (updatedDevice: {
       floor_id: number;
@@ -96,14 +95,7 @@ export function UpdateFloorDeviceDialog({
       is_stationary: boolean;
       x?: number;
       y?: number;
-    }) =>
-      fetch(API_BASE_URL + `/floors/devices/${device.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updatedDevice),
-      }).then((res) => res.json()),
+    }) => updateFloorDevice(device.id, updatedDevice),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["floor-devices"] });
       onOpenChange(false);
@@ -122,7 +114,7 @@ export function UpdateFloorDeviceDialog({
       onChange: deviceSchema,
     },
     onSubmit: async ({ value }) => {
-      await updateDevice.mutateAsync({
+      await updateDeviceMutation.mutateAsync({
         device_type: value.deviceType,
         floor_id: device.floor_id,
         is_stationary: value.isStationary,
@@ -272,8 +264,8 @@ export function UpdateFloorDeviceDialog({
             </div>
           </FieldGroup>
           <DialogFooter className="mt-4">
-            <Button type="submit" disabled={updateDevice.isPending}>
-              {updateDevice.isPending ? "Сохранение..." : "Сохранить"}
+            <Button type="submit" disabled={updateDeviceMutation.isPending}>
+              {updateDeviceMutation.isPending ? "Сохранение..." : "Сохранить"}
             </Button>
           </DialogFooter>
         </form>

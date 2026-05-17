@@ -20,6 +20,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { createBuilding } from "@/services";
 import type { BuildingSchema } from "@/types/building";
 
 const buildingSchema = z.object({
@@ -33,22 +34,14 @@ const buildingSchema = z.object({
     .max(255, "Адрес не может быть длиннее 255 символов"),
 });
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
 export function CreateBuildingDialog() {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
 
-  const createBuilding = useMutation({
+  const createBuildingMutation = useMutation({
     mutationKey: ["buildings"],
     mutationFn: (newBuilding: { name: string; address: string }) =>
-      fetch(API_BASE_URL + "/buildings", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newBuilding),
-      }).then((res) => res.json()),
+      createBuilding(newBuilding.name, newBuilding.address),
     onSuccess: (data: BuildingSchema) => {
       queryClient.setQueryData(["buildings"], (old: BuildingSchema[] = []) => {
         return [data, ...old];
@@ -69,7 +62,7 @@ export function CreateBuildingDialog() {
       onSubmit: buildingSchema,
     },
     onSubmit: async ({ value }) => {
-      await createBuilding.mutateAsync({
+      await createBuildingMutation.mutateAsync({
         name: value.name,
         address: value.address,
       });
@@ -155,8 +148,8 @@ export function CreateBuildingDialog() {
             />
           </FieldGroup>
           <DialogFooter className="mt-4">
-            <Button type="submit" disabled={createBuilding.isPending}>
-              {createBuilding.isPending ? "Создание..." : "Создать"}
+            <Button type="submit" disabled={createBuildingMutation.isPending}>
+              {createBuildingMutation.isPending ? "Загрузка..." : "Создать"}
             </Button>
           </DialogFooter>
         </form>

@@ -1,4 +1,4 @@
-"use client";
+("use client");
 
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -25,11 +25,10 @@ import {
 import { ImageInput } from "@/components/ui/image-input";
 import { Input } from "@/components/ui/input";
 import { useImageUpload } from "@/hooks/useImageUpload";
+import { createFloor } from "@/services";
 import type { BaseFloorSchema } from "@/types/floor";
 import { BuildingSelect } from "./building-select";
 import { ScaleToolDialog } from "./dialog/scale-tool-dialog";
-
-const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL!;
 
 const formSchema = z.object({
   name: z
@@ -58,27 +57,8 @@ export function CreateFloorDialog() {
   const queryClient = useQueryClient();
   const { upload } = useImageUpload();
 
-  const createFloor = useMutation({
-    mutationFn: async (newFloor: {
-      name: string;
-      building_id: number;
-      floorplan_key: string;
-      scale_factor: number;
-    }) => {
-      const response = await fetch(API_BASE_URL + "/floors", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newFloor),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to create floor");
-      }
-
-      return response.json();
-    },
+  const createFloorMutation = useMutation({
+    mutationFn: createFloor,
     onSuccess: async (data: BaseFloorSchema) => {
       queryClient.setQueryData(["floors"], (old: BaseFloorSchema[] = []) => {
         return [data, ...old];
@@ -105,7 +85,7 @@ export function CreateFloorDialog() {
 
       const uploadResult = await upload([value.image]);
 
-      await createFloor.mutateAsync({
+      await createFloorMutation.mutateAsync({
         name: value.name,
         building_id: parseInt(value.building_id),
         floorplan_key: uploadResult[0].key,
@@ -267,8 +247,8 @@ export function CreateFloorDialog() {
             />
           </FieldGroup>
           <DialogFooter className="mt-4">
-            <Button type="submit" disabled={false}>
-              {createFloor.isPending ? "Загрузка..." : "Создать"}
+            <Button type="submit" disabled={createFloorMutation.isPending}>
+              {createFloorMutation.isPending ? "Загрузка..." : "Создать"}
             </Button>
           </DialogFooter>
         </form>

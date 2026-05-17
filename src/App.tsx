@@ -1,5 +1,4 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState } from "react";
 import { BuildingSelect } from "./components/building-select";
 import { CreateBuildingDialog } from "./components/create-building-dialog";
 import { CreateFloorDialog } from "./components/create-floor-dialog";
@@ -8,12 +7,12 @@ import { FloorMap } from "./components/floor-map";
 import { FloorSelect } from "./components/floor-select";
 import "./index.css";
 import { UpdateFloorDialog } from "./components/update-floor-dialog";
+import { useAppStore } from "./stores/app";
 
 const queryClient = new QueryClient();
 
 const App = () => {
-  const [buildingId, setBuildingId] = useState<number | null>(null);
-  const [floorId, setFloorId] = useState<number | null>(null);
+  const { buildingId, floorId } = useAppStore();
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -22,21 +21,12 @@ const App = () => {
           <div className="mx-auto flex w-full max-w-[calc(100vw-8rem)]">
             <div className="flex flex-1 justify-center gap-8">
               <div className="flex gap-2">
-                <BuildingSelect
-                  onValueChange={(value) =>
-                    setBuildingId(value ? Number(value) : null)
-                  }
-                />
+                <BuildingSelect />
                 <CreateBuildingDialog />
               </div>
               {buildingId && (
                 <div className="flex gap-2">
-                  <FloorSelect
-                    onValueChange={(value) =>
-                      setFloorId(value ? Number(value) : null)
-                    }
-                    buildingId={buildingId}
-                  />
+                  <FloorSelect buildingId={buildingId} />
                   <CreateFloorDialog />
                 </div>
               )}

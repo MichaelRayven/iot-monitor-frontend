@@ -10,9 +10,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { getBuildings } from "@/services";
+import { useAppStore } from "@/stores/app";
 import type { BuildingSchema } from "@/types/building";
-
-const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL!;
 
 type BuildingSelectProps = {
   id?: string;
@@ -22,17 +22,26 @@ type BuildingSelectProps = {
 export function BuildingSelect({
   id,
   isInvalid,
+  onValueChange,
   ...props
 }: BuildingSelectProps) {
+  const { setBuildingId } = useAppStore();
   const { isPending, error, data } = useQuery<BuildingSchema[]>({
     queryKey: ["buildings"],
-    queryFn: () => fetch(API_BASE_URL + "/buildings").then((res) => res.json()),
+    queryFn: getBuildings,
   });
 
   const isDisabled = isPending || !!error || data?.length == 0;
 
   return (
-    <Select disabled={isDisabled} {...props}>
+    <Select
+      disabled={isDisabled}
+      onValueChange={(val) => {
+        setBuildingId(val ? Number(val) : null);
+        if (onValueChange) onValueChange(val);
+      }}
+      {...props}
+    >
       <SelectTrigger
         id={id}
         aria-invalid={isInvalid}

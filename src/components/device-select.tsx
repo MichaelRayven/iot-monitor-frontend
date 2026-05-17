@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Select as SelectPrimitive } from "radix-ui";
-import { API_BASE_URL } from "@/lib/constants";
-import type { Device } from "./device-list";
+import { getDevices } from "@/services";
+import type { Device } from "@/types/device";
 import {
   Select,
   SelectContent,
@@ -20,7 +20,7 @@ type DeviceSelectProps = {
 export function DeviceSelect({ id, isInvalid, ...props }: DeviceSelectProps) {
   const { isPending, data } = useQuery<Device[]>({
     queryKey: ["devices"],
-    queryFn: () => fetch(API_BASE_URL + "/devices").then((res) => res.json()),
+    queryFn: getDevices,
   });
 
   return (
