@@ -8,6 +8,12 @@ import {
   UnlockIcon,
 } from "lucide-react";
 import { useState } from "react";
+import {
+  deleteFloorDevice,
+  getDevices,
+  getFloorDevices,
+  updateFloorDevice,
+} from "@/services";
 import type { Device, FloorDevice } from "@/types/device";
 import { AddFloorDeviceDialog } from "./dialog/add-floor-device";
 import { UpdateFloorDeviceDialog } from "./dialog/update-floor-device";
@@ -26,8 +32,6 @@ import {
 } from "./ui/context-menu";
 import { ScrollArea } from "./ui/scroll-area";
 import { Separator } from "./ui/separator";
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 type DeviceListItemProps = {
   device?: FloorDevice;
@@ -57,11 +61,8 @@ export function DeviceListItem({
   const queryClient = useQueryClient();
   const [updateOpen, setUpdateOpen] = useState(false);
 
-  const deleteDevice = useMutation({
-    mutationFn: () =>
-      fetch(API_BASE_URL + `/floors/devices/${device?.id}`, {
-        method: "DELETE",
-      }),
+  const deleteDeviceMutation = useMutation({
+    mutationFn: () => deleteFloorDevice(device!.id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["floor-devices"] });
       queryClient.invalidateQueries({ queryKey: ["selected-floor"] });
@@ -70,16 +71,12 @@ export function DeviceListItem({
 
   const toggleStationary = useMutation({
     mutationFn: () =>
-      fetch(API_BASE_URL + `/floors/devices/${device?.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          floor_id: device?.floor_id,
-          device_type: device?.device_type ?? "",
-          is_stationary: !device?.is_stationary,
-          x: device?.x ?? 0,
-          y: device?.y ?? 0,
-        }),
+      updateFloorDevice(device!.id, {
+        floor_id: device?.floor_id ? Number(device.floor_id) : undefined,
+        device_type: device?.device_type ?? "",
+        is_stationary: !device?.is_stationary,
+        x: device?.x ?? 0,
+        y: device?.y ?? 0,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["floor-devices"] });
@@ -157,7 +154,7 @@ export function DeviceListItem({
           </ContextMenuItem>
           <ContextMenuItem
             className="text-red-600"
-            onClick={() => deleteDevice.mutate()}
+            onClick={() => deleteDeviceMutation.mutate()}
           >
             <Trash2Icon className="mr-2 h-4 w-4" />
             Удалить
@@ -176,10 +173,7 @@ export function DeviceListItem({
 export function FloorDeviceList({ floorId }: { floorId: number }) {
   const { data, isPending } = useQuery<FloorDevice[]>({
     queryKey: ["floor-devices", floorId],
-    queryFn: async () => {
-      const response = await fetch(API_BASE_URL + `/floors/${floorId}/devices`);
-      return await response.json();
-    },
+    queryFn: () => getFloorDevices(floorId),
   });
 
   const hasData = data && data.length > 0;
@@ -235,10 +229,7 @@ export function FloorDeviceList({ floorId }: { floorId: number }) {
 export function DeviceList() {
   const { data } = useQuery<Device[]>({
     queryKey: ["devices"],
-    queryFn: async () => {
-      const response = await fetch(API_BASE_URL + "/devices");
-      return await response.json();
-    },
+    queryFn: getDevices,
   });
 
   return (

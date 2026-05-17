@@ -23,11 +23,10 @@ import {
 import { ImageInput } from "@/components/ui/image-input";
 import { Input } from "@/components/ui/input";
 import { useImageUpload } from "@/hooks/useImageUpload";
+import { getFloor, updateFloor } from "@/services";
 import type { BaseFloorSchema, FloorSchema } from "@/types/floor";
 import { BuildingSelect } from "./building-select";
 import { ScaleToolDialog } from "./dialog/scale-tool-dialog";
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 type FormValues = {
   name: string | undefined;
@@ -63,11 +62,7 @@ const formSchema: StandardSchemaV1<FormValues> = z.object({
 export function UpdateFloorDialog({ floorId }: { floorId: number }) {
   const { data } = useQuery<FloorSchema>({
     queryKey: ["selected-floor", floorId],
-    queryFn: async () => {
-      return fetch(API_BASE_URL + `/floors/${floorId}`).then((res) =>
-        res.json()
-      );
-    },
+    queryFn: () => getFloor(floorId),
   });
 
   const [open, setOpen] = useState(false);
@@ -76,27 +71,13 @@ export function UpdateFloorDialog({ floorId }: { floorId: number }) {
   const queryClient = useQueryClient();
   const { upload } = useImageUpload();
 
-  const updateFloor = useMutation({
+  const updateFloorMutation = useMutation({
     mutationFn: async (newFloor: {
       name?: string;
       building_id?: number;
       floorplan_key?: string;
       scale_factor?: number;
-    }) => {
-      const response = await fetch(API_BASE_URL + `/floors/${floorId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newFloor),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to create floor");
-      }
-
-      return response.json();
-    },
+    }) => updateFloor(floorId, newFloor),
     onSuccess: async (data: FloorSchema) => {
       queryClient.setQueryData(["selected-floor"], data);
       queryClient.setQueriesData(
@@ -137,7 +118,7 @@ export function UpdateFloorDialog({ floorId }: { floorId: number }) {
         floorplan_key = uploadResult[0].key;
       }
 
-      await updateFloor.mutateAsync({
+      await updateFloorMutation.mutateAsync({
         name: value.name,
         building_id: value.building_id ? Number(value.building_id) : undefined,
         floorplan_key: floorplan_key,
@@ -299,8 +280,8 @@ export function UpdateFloorDialog({ floorId }: { floorId: number }) {
             />
           </FieldGroup>
           <DialogFooter className="mt-4">
-            <Button type="submit" disabled={false}>
-              {updateFloor.isPending ? "Загрузка..." : "Сохранить"}
+            <Button type="submit" disabled={updateFloorMutation.isPending}>
+              {updateFloorMutation.isPending ? "Загрузка..." : "Сохранить"}
             </Button>
           </DialogFooter>
         </form>

@@ -18,3 +18,5 @@ export type FloorDevice = Device & {
 export type FloorDeviceWithData = FloorDevice & {
   data: { [item: string]: unknown }[];
 };
+
+export type DeviceType = string;

@@ -10,27 +10,37 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { getFloorsByBuilding } from "@/services";
 import type { BaseFloorSchema } from "@/types/floor";
-
-const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL!;
 
 type FloorSelectProps = {
   buildingId: number;
 } & React.ComponentProps<typeof SelectPrimitive.Root>;
 
-export function FloorSelect({ buildingId, ...props }: FloorSelectProps) {
+import { useAppStore } from "@/stores/app";
+
+export function FloorSelect({
+  buildingId,
+  onValueChange,
+  ...props
+}: FloorSelectProps) {
+  const { setFloorId } = useAppStore();
   const { isPending, error, data } = useQuery<BaseFloorSchema[]>({
     queryKey: ["floors", buildingId],
-    queryFn: () =>
-      fetch(API_BASE_URL + `/floors/building/${buildingId}`).then((res) =>
-        res.json()
-      ),
+    queryFn: () => getFloorsByBuilding(buildingId),
   });
 
   const isDisabled = isPending || !!error || data?.length == 0;
 
   return (
-    <Select disabled={isDisabled} {...props}>
+    <Select
+      disabled={isDisabled}
+      onValueChange={(val) => {
+        setFloorId(val ? Number(val) : null);
+        if (onValueChange) onValueChange(val);
+      }}
+      {...props}
+    >
       <SelectTrigger className="w-full min-w-48">
         {isPending ? (
           <div className="flex items-center gap-2">

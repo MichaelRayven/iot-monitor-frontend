@@ -22,6 +22,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { addFloorDevice } from "@/services";
 import type { FloorDevice } from "@/types/device";
 import { DeviceSelect } from "../device-select";
 import { DeviceTypeSelect } from "../device-type-select";
@@ -81,13 +82,11 @@ const parseNumericInput = (input: string) => {
   }
 };
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
 export function AddFloorDeviceDialog({ floorId }: { floorId: number }) {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
 
-  const addDevice = useMutation({
+  const addDeviceMutation = useMutation({
     mutationKey: ["floor-devices"],
     mutationFn: (newDevice: {
       dev_eui: string;
@@ -97,13 +96,14 @@ export function AddFloorDeviceDialog({ floorId }: { floorId: number }) {
       x?: number;
       y?: number;
     }) =>
-      fetch(API_BASE_URL + `/floors/${floorId}/devices`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newDevice),
-      }).then((res) => res.json()),
+      addFloorDevice(
+        floorId,
+        Number(newDevice.dev_eui),
+        newDevice.is_stationary,
+        newDevice.device_type,
+        newDevice.x,
+        newDevice.y
+      ),
     onSuccess: (data: FloorDevice) => {
       queryClient.setQueryData(["floor-devices"], (old: FloorDevice[] = []) => {
         return [data, ...old];
@@ -128,7 +128,7 @@ export function AddFloorDeviceDialog({ floorId }: { floorId: number }) {
       onChange: deviceSchema,
     },
     onSubmit: async ({ value }) => {
-      await addDevice.mutateAsync({
+      await addDeviceMutation.mutateAsync({
         dev_eui: value.devEui,
         device_type: value.deviceType,
         floor_id: floorId,
@@ -314,8 +314,8 @@ export function AddFloorDeviceDialog({ floorId }: { floorId: number }) {
             </div>
           </FieldGroup>
           <DialogFooter className="mt-4">
-            <Button type="submit" disabled={addDevice.isPending}>
-              {addDevice.isPending ? "Создание..." : "Создать"}
+            <Button type="submit" disabled={addDeviceMutation.isPending}>
+              {addDeviceMutation.isPending ? "Создание..." : "Создать"}
             </Button>
           </DialogFooter>
         </form>
