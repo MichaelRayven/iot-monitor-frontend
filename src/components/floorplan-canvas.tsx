@@ -154,11 +154,13 @@ export function FloorplanCanvas({
   const renderGrid = () => {
     if (!image) return null;
 
+    const gridSize = 50; // Fixed visual size in pixels
+    if (gridSize * transform.scale < 10) return null; // Hide if visual size is < 10px
+
     const stageWidth = canvasSize.width;
     const stageHeight = canvasSize.height;
     const xPadding = canvasSize.width * (1 / transform.scale);
     const yPadding = canvasSize.height * (1 / transform.scale);
-    const gridSize = floor.scale_factor;
 
     // Calculate visible bounds in stage coordinates
     const stageStartX = -transform.x * (1 / transform.scale) - xPadding;
@@ -174,6 +176,7 @@ export function FloorplanCanvas({
 
     const verticalLines = [];
     const horizontalLines = [];
+    const strokeWidth = 1 / transform.scale; // Maintain 1px visual thickness
 
     // Generate vertical grid lines
     for (let x = firstGridX; x <= stageEndX; x += gridSize) {
@@ -182,7 +185,7 @@ export function FloorplanCanvas({
           key={`v-${x}`}
           points={[x, stageStartY, x, stageEndY]}
           stroke="rgba(50, 50, 50, 0.25)"
-          strokeWidth={1}
+          strokeWidth={strokeWidth}
         />
       );
     }
@@ -194,13 +197,15 @@ export function FloorplanCanvas({
           key={`h-${y}`}
           points={[stageStartX, y, stageEndX, y]}
           stroke="rgba(50, 50, 50, 0.25)"
-          strokeWidth={1}
+          strokeWidth={strokeWidth}
         />
       );
     }
 
     return [...verticalLines, ...horizontalLines];
   };
+
+  const imageScale = floor.scale_factor ? 50 / floor.scale_factor : 1;
 
   return (
     <div
@@ -230,23 +235,37 @@ export function FloorplanCanvas({
               });
             }}
             onWheel={(event) => {
-              if (event.evt.deltaY > 0) {
-                if (transform.scale > 0.5) {
-                  onTransformChange?.({
-                    x: transform.x,
-                    y: transform.y,
-                    scale: transform.scale - 0.01,
-                  });
-                }
-              } else {
-                if (transform.scale < 2.0) {
-                  onTransformChange?.({
-                    x: transform.x,
-                    y: transform.y,
-                    scale: transform.scale + 0.01,
-                  });
-                }
-              }
+              event.evt.preventDefault();
+              const stage = event.target.getStage();
+              if (!stage) return;
+
+              const oldScale = transform.scale;
+              const pointer = stage.getPointerPosition();
+
+              if (!pointer) return;
+
+              const mousePointTo = {
+                x: (pointer.x - stage.x()) / oldScale,
+                y: (pointer.y - stage.y()) / oldScale,
+              };
+
+              const scaleBy = 1.05;
+              const newScale =
+                event.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy;
+
+              // constrain scale
+              if (newScale < 0.2 || newScale > 5) return;
+
+              const newPos = {
+                x: pointer.x - mousePointTo.x * newScale,
+                y: pointer.y - mousePointTo.y * newScale,
+              };
+
+              onTransformChange?.({
+                x: newPos.x,
+                y: newPos.y,
+                scale: newScale,
+              });
             }}
             width={canvasSize.width}
             height={canvasSize.height}
@@ -256,7 +275,15 @@ export function FloorplanCanvas({
             scaleY={transform.scale}
           >
             <Layer>
-              <Group>{image && <KonvaImage image={image} />}</Group>
+              <Group>
+                {image && (
+                  <KonvaImage
+                    image={image}
+                    scaleX={imageScale}
+                    scaleY={imageScale}
+                  />
+                )}
+              </Group>
               <Group>{renderGrid()}</Group>
               <Group>
                 {devices
@@ -282,14 +309,14 @@ export function FloorplanCanvas({
                     >
                       <Circle
                         fill={getDeviceColor(device.device_type)}
-                        radius={6}
+                        radius={16}
                       />
                       <Text
-                        fontSize={6}
+                        fontSize={16}
                         fill="#111827"
                         text={getDeviceName(device)}
-                        x={8}
-                        y={-3}
+                        x={24}
+                        y={-8}
                       />
                     </Group>
                   ))}
