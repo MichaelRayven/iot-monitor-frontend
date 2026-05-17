@@ -254,7 +254,7 @@ export function FloorplanCanvas({
                 event.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy;
 
               // constrain scale
-              if (newScale < 0.1 || newScale > 5.0) return;
+              if (newScale < 0.2 || newScale > 5) return;
 
               const newPos = {
                 x: pointer.x - mousePointTo.x * newScale,
@@ -309,14 +309,14 @@ export function FloorplanCanvas({
                     >
                       <Circle
                         fill={getDeviceColor(device.device_type)}
-                        radius={6}
+                        radius={16}
                       />
                       <Text
-                        fontSize={6}
+                        fontSize={16}
                         fill="#111827"
                         text={getDeviceName(device)}
-                        x={8}
-                        y={-3}
+                        x={24}
+                        y={-8}
                       />
                     </Group>
                   ))}
