@@ -23,15 +23,19 @@ const App = () => {
             <div className="flex flex-1 justify-center gap-8">
               <div className="flex gap-2">
                 <BuildingSelect
-                  onValueChange={(value) => setBuildingId(value)}
+                  onValueChange={(value) =>
+                    setBuildingId(value ? Number(value) : null)
+                  }
                 />
                 <CreateBuildingDialog />
               </div>
               {buildingId && (
                 <div className="flex gap-2">
                   <FloorSelect
-                    onValueChange={(value) => setFloorId(value)}
-                    buildingId={Number.parseInt(buildingId)}
+                    onValueChange={(value) =>
+                      setFloorId(value ? Number(value) : null)
+                    }
+                    buildingId={buildingId}
                   />
                   <CreateFloorDialog />
                 </div>
