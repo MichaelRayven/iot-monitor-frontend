@@ -98,7 +98,7 @@ export function AddFloorDeviceDialog({ floorId }: { floorId: number }) {
     }) =>
       addFloorDevice(
         floorId,
-        Number(newDevice.dev_eui),
+        newDevice.dev_eui,
         newDevice.is_stationary,
         newDevice.device_type,
         newDevice.x,
