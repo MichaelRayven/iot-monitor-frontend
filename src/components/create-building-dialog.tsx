@@ -20,7 +20,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import type { BuildingSchema } from "@/features/floor-plan/types";
+import type { BuildingSchema } from "@/types/building";
 
 const buildingSchema = z.object({
   name: z

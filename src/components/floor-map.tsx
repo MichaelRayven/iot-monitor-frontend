@@ -1,9 +1,9 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Fragment, useState } from "react";
 import { FloorplanCanvas } from "@/components/floorplan-canvas";
-import type { FloorSchema } from "@/features/floor-plan/types";
 import { API_BASE_URL } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import type { FloorSchema } from "@/types/floor";
 import type { Device, FloorDeviceWithData } from "./device-list";
 import { Card, CardContent } from "./ui/card";
 

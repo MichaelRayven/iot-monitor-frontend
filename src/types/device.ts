@@ -9,5 +9,5 @@ export type DeviceSchema = {
   is_stationary?: boolean | null;
   x?: number | null;
   y?: number | null;
-  data?: Record<string, unknown> | null;
+  data?: Record<string, unknown>[] | null;
 };

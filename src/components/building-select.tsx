@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { BuildingSchema } from "@/features/floor-plan/types";
+import type { BuildingSchema } from "@/types/building";
 
 const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL!;
 

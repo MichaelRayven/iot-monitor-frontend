@@ -22,8 +22,8 @@ import {
 } from "@/components/ui/field";
 import { ImageInput } from "@/components/ui/image-input";
 import { Input } from "@/components/ui/input";
-import type { BaseFloorSchema, FloorSchema } from "@/features/floor-plan/types";
 import { useImageUpload } from "@/hooks/useImageUpload";
+import type { BaseFloorSchema, FloorSchema } from "@/types/floor";
 import { BuildingSelect } from "./building-select";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;

@@ -9,11 +9,8 @@ import {
   Stage,
   Text,
 } from "react-konva";
-import type { DeviceSchema } from "@/features/devices/types";
-import type {
-  FloorPlanTransform,
-  FloorSchema,
-} from "../features/floor-plan/types";
+import type { DeviceSchema } from "@/types/device";
+import type { FloorPlanTransform, FloorSchema } from "@/types/floor";
 
 type FloorPlanCanvasProps = {
   className?: string;
