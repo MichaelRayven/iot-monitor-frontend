@@ -65,7 +65,7 @@ export function DeviceDataHistoryModal({
 }: Props) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col">
+      <DialogContent className="max-w-[calc(90vw-2rem)]! w-full max-h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>
             История: {deviceData.name || deviceData.dev_eui}

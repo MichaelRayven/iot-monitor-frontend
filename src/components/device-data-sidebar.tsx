@@ -26,7 +26,7 @@ type DeviceDataSidebarProps = {
 function formatTimestamp(ts: unknown) {
   if (typeof ts === "number") {
     // Determine if it's seconds or milliseconds. Assume seconds if very small
-    const date = new Date(ts > 10000000000 ? ts : ts * 1000);
+    const date = new Date(ts * 1000);
     return date.toLocaleString();
   }
   return String(ts);
@@ -82,7 +82,6 @@ export function DeviceDataSidebar({
                 const item = latestData;
 
                 // Common attributes
-                const packetType = item.packet as string | undefined;
                 const timestamp = item.device_timestamp as number | undefined;
                 const battery = item.battery_percent as number | undefined;
                 const temp = item.temperature_c as number | undefined;
@@ -110,131 +109,83 @@ export function DeviceDataSidebar({
                   uiReasonLabel = item.send_reason_label as string | undefined;
                 }
 
-                // Exclude these from the generic "rest" rendering
-                const knownKeys = new Set([
-                  "device",
-                  "packet",
-                  "device_timestamp",
-                  "battery_percent",
-                  "temperature_c",
-                  "mode_label",
-                  "send_reason_label",
-                  "mode",
-                  "send_reason",
-                  "reason",
-                  "state_raw",
-                  "state",
-                  "beacons",
-                ]);
-
                 return (
-                  <Card className="border-primary/50 shadow-md">
-                    {packetType && (
-                      <CardHeader className="py-3 px-4 bg-muted/30">
-                        <CardTitle className="text-sm font-semibold capitalize tracking-tight">
-                          {packetType.replace(/_/g, " ")}
-                        </CardTitle>
-                      </CardHeader>
+                  <>
+                    {/* Common Info Header */}
+                    <div className="flex gap-4 text-xs text-muted-foreground mb-2">
+                      {timestamp && (
+                        <div
+                          className="flex items-center gap-1"
+                          title="Timestamp"
+                        >
+                          <ClockIcon className="h-3 w-3" />
+                          {formatTimestamp(timestamp)}
+                        </div>
+                      )}
+                      {battery !== undefined && (
+                        <div
+                          className="flex items-center gap-1"
+                          title="Battery"
+                        >
+                          <BatteryIcon className="h-3 w-3" />
+                          {battery}%
+                        </div>
+                      )}
+                      {temp !== undefined && (
+                        <div
+                          className="flex items-center gap-1"
+                          title="Temperature"
+                        >
+                          <ThermometerIcon className="h-3 w-3" />
+                          {temp}°C
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Statuses */}
+                    {uiModeLabel && (
+                      <StatusBadge
+                        label="Статус"
+                        value={uiModeLabel.replace(/_/g, " ")}
+                      />
                     )}
-                    <CardContent className="p-4 flex flex-col gap-2">
-                      {/* Common Info Header */}
-                      <div className="flex gap-4 text-xs text-muted-foreground mb-2">
-                        {timestamp && (
-                          <div
-                            className="flex items-center gap-1"
-                            title="Timestamp"
-                          >
-                            <ClockIcon className="h-3 w-3" />
-                            {formatTimestamp(timestamp)}
-                          </div>
-                        )}
-                        {battery !== undefined && (
-                          <div
-                            className="flex items-center gap-1"
-                            title="Battery"
-                          >
-                            <BatteryIcon className="h-3 w-3" />
-                            {battery}%
-                          </div>
-                        )}
-                        {temp !== undefined && (
-                          <div
-                            className="flex items-center gap-1"
-                            title="Temperature"
-                          >
-                            <ThermometerIcon className="h-3 w-3" />
-                            {temp}°C
-                          </div>
-                        )}
+                    {uiReasonLabel && (
+                      <StatusBadge
+                        label="Событие"
+                        value={uiReasonLabel.replace(/_/g, " ")}
+                      />
+                    )}
+
+                    {/* Beacons list for Smart Badge */}
+                    {Array.isArray(item.beacons) && item.beacons.length > 0 && (
+                      <div className="mt-3">
+                        <h4 className="text-xs font-semibold mb-2">Beacons</h4>
+                        <div className="flex flex-col gap-2">
+                          {item.beacons.map(
+                            (beacon: Record<string, unknown>, bIdx: number) => (
+                              <div
+                                key={bIdx}
+                                className="bg-muted/50 p-2 rounded text-xs"
+                              >
+                                <InfoRow
+                                  label="MAC/ID"
+                                  value={beacon.mac_or_id}
+                                />
+                                <InfoRow
+                                  label="Battery"
+                                  value={`${beacon.battery_percent}%`}
+                                />
+                                <InfoRow
+                                  label="Temp/Hum"
+                                  value={`${beacon.temperature_c}°C / ${beacon.humidity_percent}%`}
+                                />
+                              </div>
+                            )
+                          )}
+                        </div>
                       </div>
-
-                      {/* Statuses */}
-                      {uiModeLabel && (
-                        <StatusBadge
-                          label="Статус"
-                          value={uiModeLabel.replace(/_/g, " ")}
-                        />
-                      )}
-                      {uiReasonLabel && (
-                        <StatusBadge
-                          label="Событие"
-                          value={uiReasonLabel.replace(/_/g, " ")}
-                        />
-                      )}
-
-                      {/* Other Data */}
-                      <div className="mt-2 flex flex-col gap-1">
-                        {Object.entries(item).map(([key, value]) => {
-                          if (knownKeys.has(key)) return null;
-                          if (typeof value === "object" && value !== null)
-                            return null; // handled separately if needed
-                          return (
-                            <InfoRow
-                              key={key}
-                              label={key.replace(/_/g, " ")}
-                              value={String(value)}
-                            />
-                          );
-                        })}
-                      </div>
-
-                      {/* Beacons list for Smart Badge */}
-                      {Array.isArray(item.beacons) &&
-                        item.beacons.length > 0 && (
-                          <div className="mt-3">
-                            <h4 className="text-xs font-semibold mb-2">
-                              Beacons
-                            </h4>
-                            <div className="flex flex-col gap-2">
-                              {item.beacons.map(
-                                (
-                                  beacon: Record<string, unknown>,
-                                  bIdx: number
-                                ) => (
-                                  <div
-                                    key={bIdx}
-                                    className="bg-muted/50 p-2 rounded text-xs"
-                                  >
-                                    <InfoRow
-                                      label="MAC/ID"
-                                      value={beacon.mac_or_id}
-                                    />
-                                    <InfoRow
-                                      label="Battery"
-                                      value={`${beacon.battery_percent}%`}
-                                    />
-                                    <InfoRow
-                                      label="Temp/Hum"
-                                      value={`${beacon.temperature_c}°C / ${beacon.humidity_percent}%`}
-                                    />
-                                  </div>
-                                )
-                              )}
-                            </div>
-                          </div>
-                        )}
-                    </CardContent>
-                  </Card>
+                    )}
+                  </>
                 );
               })()
             ) : (
