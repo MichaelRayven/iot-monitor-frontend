@@ -1,7 +1,5 @@
 import { useForm, useStore } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { PlusIcon } from "lucide-react";
-import { useState } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,7 +9,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Field,
@@ -23,7 +20,6 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import type { FloorDevice } from "../device-list";
-import { DeviceSelect } from "../device-select";
 import { DeviceTypeSelect } from "../device-type-select";
 import { Switch } from "../ui/switch";
 
@@ -36,10 +32,6 @@ const numericStringSchema = z
 
 const deviceSchema = z
   .object({
-    devEui: z
-      .string()
-      .min(16, "EUI обязательное поле")
-      .max(16, "EUI не может быть длиннее 16 символов"),
     deviceType: z.string().min(1, "Тип устройства обязательное поле"),
     isStationary: z.boolean(),
     x: z.string(),
@@ -83,60 +75,60 @@ const parseNumericInput = (input: string) => {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-export function AddFloorDeviceDialog({ floorId }: { floorId: number }) {
-  const [open, setOpen] = useState(false);
+type UpdateFloorDeviceDialogProps = {
+  device: FloorDevice;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+};
+
+export function UpdateFloorDeviceDialog({
+  device,
+  open,
+  onOpenChange,
+}: UpdateFloorDeviceDialogProps) {
   const queryClient = useQueryClient();
 
-  const addDevice = useMutation({
-    mutationKey: ["floor-devices"],
-    mutationFn: (newDevice: {
-      dev_eui: string;
+  const updateDevice = useMutation({
+    mutationKey: ["update-floor-device", device.id],
+    mutationFn: (updatedDevice: {
       floor_id: number;
       device_type: string;
       is_stationary: boolean;
       x?: number;
       y?: number;
     }) =>
-      fetch(API_BASE_URL + `/floors/${floorId}/devices`, {
-        method: "POST",
+      fetch(API_BASE_URL + `/floors/devices/${device.id}`, {
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(newDevice),
+        body: JSON.stringify(updatedDevice),
       }).then((res) => res.json()),
-    onSuccess: (data: FloorDevice) => {
-      queryClient.setQueryData(["floor-devices"], (old: FloorDevice[] = []) => {
-        return [data, ...old];
-      });
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["floor-devices"] });
-
-      setOpen(false);
-      form.reset();
+      queryClient.invalidateQueries({ queryKey: ["selected-floor"] });
+      onOpenChange(false);
     },
   });
 
   const form = useForm({
     defaultValues: {
-      devEui: "",
-      deviceType: "",
-      isStationary: false,
-      x: "",
-      y: "",
+      deviceType: device.device_type ?? "",
+      isStationary: device.is_stationary,
+      x: device.x?.toString() ?? "",
+      y: device.y?.toString() ?? "",
     },
     validators: {
       onSubmit: deviceSchema,
       onChange: deviceSchema,
     },
     onSubmit: async ({ value }) => {
-      await addDevice.mutateAsync({
-        dev_eui: value.devEui,
+      await updateDevice.mutateAsync({
         device_type: value.deviceType,
-        floor_id: floorId,
+        floor_id: device.floor_id,
         is_stationary: value.isStationary,
-        ...(value.isStationary && {
-          x: Number(value.x),
-          y: Number(value.y),
-        }),
+        x: value.isStationary && value.x !== "" ? Number(value.x) : 0,
+        y: value.isStationary && value.y !== "" ? Number(value.y) : 0,
       });
     },
   });
@@ -147,54 +139,22 @@ export function AddFloorDeviceDialog({ floorId }: { floorId: number }) {
   );
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          variant="outline"
-          aria-label="Добавить устройство на этаж"
-          size="icon"
-          className="text-muted-foreground rounded-md"
-        >
-          <PlusIcon />
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Добавить устройство</DialogTitle>
+          <DialogTitle>Обновить устройство</DialogTitle>
           <DialogDescription>
-            Добавьте новое устройство на этаж
+            Измените параметры устройства {device.name ?? device.dev_eui}
           </DialogDescription>
         </DialogHeader>
         <form
-          id="add-device-form"
+          id="update-device-form"
           onSubmit={(e) => {
             e.preventDefault();
             form.handleSubmit();
           }}
         >
           <FieldGroup>
-            <form.Field
-              name="devEui"
-              children={(field) => {
-                const isInvalid =
-                  field.state.meta.isTouched && !field.state.meta.isValid;
-                return (
-                  <Field data-invalid={isInvalid}>
-                    <FieldLabel htmlFor={field.name}>Устройство</FieldLabel>
-                    <DeviceSelect
-                      id={field.name}
-                      name={field.name}
-                      value={field.state.value}
-                      onValueChange={field.handleChange}
-                      isInvalid={isInvalid}
-                    />
-                    {isInvalid && (
-                      <FieldError errors={field.state.meta.errors} />
-                    )}
-                  </Field>
-                );
-              }}
-            />
             <form.Field
               name="deviceType"
               children={(field) => {
@@ -203,7 +163,6 @@ export function AddFloorDeviceDialog({ floorId }: { floorId: number }) {
                 return (
                   <Field data-invalid={isInvalid}>
                     <FieldLabel htmlFor={field.name}>Тип устройства</FieldLabel>
-
                     <DeviceTypeSelect
                       id={field.name}
                       name={field.name}
@@ -267,7 +226,7 @@ export function AddFloorDeviceDialog({ floorId }: { floorId: number }) {
                           const rawValue = parseNumericInput(e.target.value);
                           if (rawValue !== null) field.handleChange(rawValue);
                         }}
-                        className="w-1/2"
+                        className="w-full"
                         aria-invalid={isInvalid}
                         placeholder="0"
                         autoComplete="off"
@@ -299,7 +258,7 @@ export function AddFloorDeviceDialog({ floorId }: { floorId: number }) {
                           const rawValue = parseNumericInput(e.target.value);
                           if (rawValue !== null) field.handleChange(rawValue);
                         }}
-                        className="w-1/2"
+                        className="w-full"
                         aria-invalid={isInvalid}
                         placeholder="0"
                         autoComplete="off"
@@ -314,8 +273,8 @@ export function AddFloorDeviceDialog({ floorId }: { floorId: number }) {
             </div>
           </FieldGroup>
           <DialogFooter className="mt-4">
-            <Button type="submit" disabled={addDevice.isPending}>
-              {addDevice.isPending ? "Создание..." : "Создать"}
+            <Button type="submit" disabled={updateDevice.isPending}>
+              {updateDevice.isPending ? "Сохранение..." : "Сохранить"}
             </Button>
           </DialogFooter>
         </form>

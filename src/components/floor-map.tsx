@@ -1,10 +1,10 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Fragment, useState } from "react";
 import { FloorplanCanvas } from "@/components/floorplan-canvas";
 import { API_BASE_URL } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import type { FloorSchema } from "@/types/floor";
-import type { Device, FloorDeviceWithData } from "./device-list";
+import type { FloorDeviceWithData } from "./device-list";
 import { Card, CardContent } from "./ui/card";
 
 type FloorMapProps = {
@@ -13,6 +13,7 @@ type FloorMapProps = {
 };
 
 export function FloorMap({ floorId, className }: FloorMapProps) {
+  const queryClient = useQueryClient();
   const [selectedDeviceId, setSelectedDeviceId] = useState<number | null>(null);
   const [transform, setTransform] = useState({
     x: 0,
@@ -40,14 +41,18 @@ export function FloorMap({ floorId, className }: FloorMapProps) {
   });
 
   const updateFloorDevice = useMutation({
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["floor-devices"] });
+      queryClient.invalidateQueries({ queryKey: ["selected-floor"] });
+    },
     mutationFn: async ({
       deviceId,
       ...values
     }: {
       deviceId: number;
-      floorId?: number;
-      deviceType?: string;
-      isStationary?: boolean;
+      floor_id?: number;
+      device_type?: string;
+      is_stationary?: boolean;
       x?: number;
       y?: number;
     }) => {
@@ -95,12 +100,31 @@ export function FloorMap({ floorId, className }: FloorMapProps) {
         onDeviceClick={(id) => {
           setSelectedDeviceId(id);
         }}
+        onDeviceDrop={async (id, x, y) => {
+          const device = data.devices?.find((d) => d.id === id);
+          if (device) {
+            await updateFloorDevice.mutateAsync({
+              deviceId: id,
+              floor_id: device.floor_id ? Number(device.floor_id) : undefined,
+              device_type: device.device_type ?? "",
+              is_stationary: true,
+              x: x,
+              y: y,
+            });
+          }
+        }}
         onDeviceMove={async (id, x, y) => {
-          await updateFloorDevice.mutateAsync({
-            deviceId: id,
-            x: x,
-            y: y,
-          });
+          const device = data.devices?.find((d) => d.id === id);
+          if (device) {
+            await updateFloorDevice.mutateAsync({
+              deviceId: id,
+              floor_id: device.floor_id ? Number(device.floor_id) : undefined,
+              device_type: device.device_type ?? "",
+              is_stationary: true,
+              x: x,
+              y: y,
+            });
+          }
         }}
       />
       {deviceData && (
