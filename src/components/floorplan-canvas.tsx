@@ -236,11 +236,11 @@ export function FloorplanCanvas({
             }}
             onWheel={(event) => {
               if (event.evt.deltaY > 0) {
-                if (transform.scale > 0.5) {
+                if (transform.scale > 0.25) {
                   onTransformChange?.({
                     x: transform.x,
                     y: transform.y,
-                    scale: transform.scale - 0.01,
+                    scale: transform.scale - 0.05,
                   });
                 }
               } else {
@@ -248,7 +248,7 @@ export function FloorplanCanvas({
                   onTransformChange?.({
                     x: transform.x,
                     y: transform.y,
-                    scale: transform.scale + 0.01,
+                    scale: transform.scale + 0.05,
                   });
                 }
               }
@@ -295,14 +295,14 @@ export function FloorplanCanvas({
                     >
                       <Circle
                         fill={getDeviceColor(device.device_type)}
-                        radius={6}
+                        radius={16}
                       />
                       <Text
-                        fontSize={6}
+                        fontSize={12}
                         fill="#111827"
                         text={getDeviceName(device)}
-                        x={8}
-                        y={-3}
+                        x={24}
+                        y={-6}
                       />
                     </Group>
                   ))}
