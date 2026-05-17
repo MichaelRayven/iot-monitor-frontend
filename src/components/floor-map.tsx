@@ -117,8 +117,8 @@ export function FloorMap({ floorId, className }: FloorMapProps) {
               floor_id: device.floor_id ? Number(device.floor_id) : undefined,
               device_type: device.device_type ?? "",
               is_stationary: true,
-              x: x,
-              y: y,
+              x: Math.round(x),
+              y: Math.round(y),
             });
           }
         }}
@@ -130,8 +130,8 @@ export function FloorMap({ floorId, className }: FloorMapProps) {
               floor_id: device.floor_id ? Number(device.floor_id) : undefined,
               device_type: device.device_type ?? "",
               is_stationary: true,
-              x: x,
-              y: y,
+              x: Math.round(x),
+              y: Math.round(y),
             });
           }
         }}
