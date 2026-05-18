@@ -57,82 +57,86 @@ export function DeviceDataHistoryModal({
 }: Props) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[calc(90vw-2rem)]! w-full max-h-[80vh] flex flex-col">
+      <DialogContent className="max-w-[calc(90vw-2rem)] w-full max-h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>
             История: {deviceData.name || deviceData.dev_eui}
           </DialogTitle>
         </DialogHeader>
-        <ScrollArea className="flex-1 mt-4">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Время</TableHead>
-                <TableHead>Тип пакета</TableHead>
-                <TableHead>Статус / Событие</TableHead>
-                <TableHead>Заряд</TableHead>
-                <TableHead>Детали</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {deviceData.data.map((item, i) => {
-                const ts = item.device_timestamp as number;
-                const battery = item.battery_percent;
-                const packet = item.packet as string;
+        <ScrollArea className="flex-1 mt-4 overflow-hidden">
+          <div className="min-w-max">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Время</TableHead>
+                  <TableHead>Тип пакета</TableHead>
+                  <TableHead>Статус / Событие</TableHead>
+                  <TableHead>Заряд</TableHead>
+                  <TableHead>Детали</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {deviceData.data.map((item, i) => {
+                  const ts = item.device_timestamp as number;
+                  const battery = item.battery_percent;
+                  const packet = item.packet as string;
 
-                const statusStr = getDerivedStatus(
-                  deviceData.device_type,
-                  item
-                );
+                  const statusStr = getDerivedStatus(
+                    deviceData.device_type,
+                    item
+                  );
 
-                // Filter out standard keys to show raw details
-                const detailEntries = Object.entries(item).filter(([k]) => {
-                  return ![
-                    "device",
-                    "packet",
-                    "device_timestamp",
-                    "battery_percent",
-                    "temperature_c",
-                    "mode_label",
-                    "send_reason_label",
-                    "mode",
-                    "send_reason",
-                    "reason",
-                    "state_raw",
-                    "state",
-                  ].includes(k);
-                });
+                  // Filter out standard keys to show raw details
+                  const detailEntries = Object.entries(item).filter(([k]) => {
+                    return ![
+                      "device",
+                      "packet",
+                      "device_timestamp",
+                      "battery_percent",
+                      "temperature_c",
+                      "mode_label",
+                      "send_reason_label",
+                      "mode",
+                      "send_reason",
+                      "reason",
+                      "state_raw",
+                      "state",
+                    ].includes(k);
+                  });
 
-                return (
-                  <TableRow key={i}>
-                    <TableCell className="whitespace-nowrap">
-                      {formatTimestamp(ts)}
-                    </TableCell>
-                    <TableCell className="capitalize">
-                      {packet ? packet.replace(/_/g, " ") : "-"}
-                    </TableCell>
-                    <TableCell>{statusStr}</TableCell>
-                    <TableCell>
-                      {battery !== undefined ? `${battery}%` : "-"}
-                    </TableCell>
-                    <TableCell
-                      className="text-xs text-muted-foreground max-w-xs truncate"
-                      title={JSON.stringify(Object.fromEntries(detailEntries))}
-                    >
-                      {detailEntries.length > 0
-                        ? detailEntries
-                            .map(
-                              ([k, v]) =>
-                                `${k}: ${typeof v === "object" ? "..." : v}`
-                            )
-                            .join(", ")
-                        : "-"}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                  return (
+                    <TableRow key={i}>
+                      <TableCell className="whitespace-nowrap">
+                        {formatTimestamp(ts)}
+                      </TableCell>
+                      <TableCell className="capitalize">
+                        {packet ? packet.replace(/_/g, " ") : "-"}
+                      </TableCell>
+                      <TableCell>{statusStr}</TableCell>
+                      <TableCell>
+                        {battery !== undefined ? `${battery}%` : "-"}
+                      </TableCell>
+                      <TableCell
+                        className="text-xs text-muted-foreground max-w-xs truncate"
+                        title={JSON.stringify(
+                          Object.fromEntries(detailEntries)
+                        )}
+                      >
+                        {detailEntries.length > 0
+                          ? detailEntries
+                              .map(
+                                ([k, v]) =>
+                                  `${k}: ${typeof v === "object" ? "..." : v}`
+                              )
+                              .join(", ")
+                          : "-"}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
         </ScrollArea>
       </DialogContent>
     </Dialog>

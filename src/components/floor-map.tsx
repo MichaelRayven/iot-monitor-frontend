@@ -94,7 +94,7 @@ export function FloorMap({ floorId, className }: FloorMapProps) {
             await updateFloorDeviceMutation.mutateAsync({
               deviceId: id,
               floor_id: device.floor_id ? Number(device.floor_id) : undefined,
-              device_type: device.device_type ?? "",
+              device_type: device.device_type ?? undefined,
               is_stationary: true,
               x: Math.round(x),
               y: Math.round(y),
@@ -107,7 +107,7 @@ export function FloorMap({ floorId, className }: FloorMapProps) {
             await updateFloorDeviceMutation.mutateAsync({
               deviceId: id,
               floor_id: device.floor_id ? Number(device.floor_id) : undefined,
-              device_type: device.device_type ?? "",
+              device_type: device.device_type ?? undefined,
               is_stationary: true,
               x: Math.round(x),
               y: Math.round(y),

@@ -73,7 +73,7 @@ export function DeviceListItem({
     mutationFn: () =>
       updateFloorDevice(device!.id, {
         floor_id: device?.floor_id ? Number(device.floor_id) : undefined,
-        device_type: device?.device_type ?? "",
+        device_type: device?.device_type ?? undefined,
         is_stationary: !device?.is_stationary,
         x: device?.x ?? 0,
         y: device?.y ?? 0,
