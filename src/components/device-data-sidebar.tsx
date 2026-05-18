@@ -7,7 +7,6 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   getSmartBadgeReason,
   getSmartBadgeStatus,
@@ -15,6 +14,7 @@ import {
   getSmartMS0101State,
   getSmartWB0101Mode,
 } from "@/lib/device-status-mappings";
+import { formatTimestamp } from "@/lib/utils";
 import type { FloorDeviceWithData } from "@/types/device";
 import { DeviceDataHistoryModal } from "./device-data-history-modal";
 
@@ -22,15 +22,6 @@ type DeviceDataSidebarProps = {
   deviceData: FloorDeviceWithData;
   onClose: () => void;
 };
-
-function formatTimestamp(ts: unknown) {
-  if (typeof ts === "number") {
-    // Determine if it's seconds or milliseconds. Assume seconds if very small
-    const date = new Date(ts * 1000);
-    return date.toLocaleString();
-  }
-  return String(ts);
-}
 
 // Generic component to show a label and a value
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -47,7 +38,7 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
 function StatusBadge({ label, value }: { label: string; value: string }) {
   if (!value) return null;
   return (
-    <div className="flex justify-between items-center py-2 bg-secondary/20 rounded-md px-3 my-1">
+    <div className="flex justify-between items-center py-2 bg-secondary/20 rounded-md my-1">
       <span className="text-sm font-semibold text-secondary-foreground">
         {label}
       </span>
@@ -68,9 +59,14 @@ export function DeviceDataSidebar({
       <aside className="absolute top-0 bottom-0 w-80 overflow-y-auto right-0 bg-background/95 backdrop-blur border-l shadow-lg">
         <div className="p-4 h-full flex flex-col gap-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold truncate">
-              {deviceData.name || deviceData.dev_eui}
-            </h2>
+            <div className="flex flex-col">
+              <h2 className="text-lg font-bold truncate">
+                {deviceData.name || deviceData.dev_eui}
+              </h2>
+              <h4 className="text-muted-foreground truncate">
+                {deviceData.name && deviceData.dev_eui}
+              </h4>
+            </div>
             <Button variant="ghost" size="icon" onClick={onClose}>
               <XIcon className="h-4 w-4" />
             </Button>
@@ -112,7 +108,7 @@ export function DeviceDataSidebar({
                 return (
                   <>
                     {/* Common Info Header */}
-                    <div className="flex gap-4 text-xs text-muted-foreground mb-2">
+                    <div className="flex gap-4 text-sm text-muted-foreground mb-2">
                       {timestamp && (
                         <div
                           className="flex items-center gap-1"
@@ -159,7 +155,7 @@ export function DeviceDataSidebar({
                     {/* Beacons list for Smart Badge */}
                     {Array.isArray(item.beacons) && item.beacons.length > 0 && (
                       <div className="mt-3">
-                        <h4 className="text-xs font-semibold mb-2">Beacons</h4>
+                        <h4 className="text-xs font-semibold mb-2">Маячки</h4>
                         <div className="flex flex-col gap-2">
                           {item.beacons.map(
                             (beacon: Record<string, unknown>, bIdx: number) => (
@@ -167,17 +163,18 @@ export function DeviceDataSidebar({
                                 key={bIdx}
                                 className="bg-muted/50 p-2 rounded text-xs"
                               >
+                                <InfoRow label="MAC" value={`${beacon.mac}`} />
                                 <InfoRow
-                                  label="MAC/ID"
-                                  value={beacon.mac_or_id}
-                                />
-                                <InfoRow
-                                  label="Battery"
+                                  label="Заряд"
                                   value={`${beacon.battery_percent}%`}
                                 />
                                 <InfoRow
-                                  label="Temp/Hum"
-                                  value={`${beacon.temperature_c}°C / ${beacon.humidity_percent}%`}
+                                  label="Температура"
+                                  value={`${beacon.temperature_c}°C`}
+                                />
+                                <InfoRow
+                                  label="Влажность"
+                                  value={`${beacon.humidity_percent}%`}
                                 />
                               </div>
                             )

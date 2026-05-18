@@ -3,17 +3,17 @@ export const getSmartBadgeReason = (reason?: number) => {
     case 0:
       return "По времени";
     case 1:
-      return "По началу движения";
+      return "Обнаружено движение";
     case 2:
-      return "По прекращению движения";
+      return "Движение прекращено";
     case 3:
-      return "По датчику отрыва";
+      return "Обнаружен отрыв";
     case 4:
-      return "По обнаружению падения (удар)";
+      return "Обнаружен удар";
     case 5:
-      return "По активации тревоги (поиск)";
+      return "Активированна тревога (поиск)";
     case 6:
-      return "По активации тревоги (потеря СИЗ)";
+      return "Активированна тревога (потеря СИЗ)";
     default:
       return undefined;
   }
@@ -27,9 +27,8 @@ export const getSmartBadgeStatus = (status?: number) => {
       return "Предупреждение";
     case 3:
       return "Поиск";
-    // omitting 0 and 7 per requirements as they are normal/clear states
     default:
-      return undefined;
+      return "Ожидание";
   }
 };
 
@@ -43,16 +42,16 @@ export const getSmartWB0101Mode = (mode?: number) => {
     case 6:
       return "Тестирование";
     default:
-      return undefined; // Omitting "Ожидание" and "Отмена тревоги" to reduce noise
+      return "Ожидание";
   }
 };
 
 export const getSmartMS0101Reason = (reason?: number) => {
   switch (reason) {
     case 1:
-      return "Тревога";
+      return "Замечено движение";
     default:
-      return undefined; // Omitting 0 and 2 for a cleaner current status
+      return "Ожидание";
   }
 };
 

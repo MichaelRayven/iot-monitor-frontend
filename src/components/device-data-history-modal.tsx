@@ -1,4 +1,3 @@
-import { format } from "date-fns";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +20,7 @@ import {
   getSmartMS0101State,
   getSmartWB0101Mode,
 } from "@/lib/device-status-mappings";
+import { formatTimestamp } from "@/lib/utils";
 import type { FloorDeviceWithData } from "@/types/device";
 
 type Props = {
@@ -28,14 +28,6 @@ type Props = {
   onOpenChange: (open: boolean) => void;
   deviceData: FloorDeviceWithData;
 };
-
-function formatTimestamp(ts: unknown) {
-  if (typeof ts === "number") {
-    const date = new Date(ts > 10000000000 ? ts : ts * 1000);
-    return format(date, "PPpp");
-  }
-  return String(ts || "-");
-}
 
 function getDerivedStatus(deviceType: string, item: Record<string, unknown>) {
   let uiModeLabel: string | undefined = undefined;
@@ -77,14 +69,14 @@ export function DeviceDataHistoryModal({
               <TableRow>
                 <TableHead>Время</TableHead>
                 <TableHead>Тип пакета</TableHead>
-                <TableHead>Событие / Статус</TableHead>
+                <TableHead>Статус / Событие</TableHead>
                 <TableHead>Заряд</TableHead>
                 <TableHead>Детали</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {deviceData.data.map((item, i) => {
-                const ts = item.device_timestamp;
+                const ts = item.device_timestamp as number;
                 const battery = item.battery_percent;
                 const packet = item.packet as string;
 
