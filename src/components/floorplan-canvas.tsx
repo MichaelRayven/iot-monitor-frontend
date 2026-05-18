@@ -11,6 +11,7 @@ import {
 } from "react-konva";
 import type { FloorDevice } from "@/types/device";
 import type { FloorPlanTransform, FloorSchema } from "@/types/floor";
+import { AlarmRipple } from "./alarm-ripple";
 
 type FloorPlanCanvasProps = {
   className?: string;
@@ -140,15 +141,31 @@ export function FloorplanCanvas({
   const getDeviceName = (device: FloorDevice) => device.name ?? device.dev_eui;
 
   const getDeviceColor = (deviceType: string) => {
-    if (deviceType === "alarm-button") {
+    if (deviceType === "Smart-WB0101" || deviceType === "alarm-button") {
       return "#dc2626";
     }
 
-    if (deviceType === "beacon") {
+    if (deviceType === "Beacon" || deviceType === "beacon") {
       return "#2563eb";
     }
 
     return "#16a34a";
+  };
+
+  const isDeviceInAlarm = (device: FloorDevice) => {
+    if (device.device_type === "Smart-MS0101" && device.send_reason === 1) {
+      return true;
+    }
+    if (
+      (device.device_type === "Smart-WB0101" ||
+        device.device_type === "alarm-button") &&
+      device.mode !== undefined &&
+      device.mode >= 2 &&
+      device.mode <= 5
+    ) {
+      return true;
+    }
+    return false;
   };
 
   const renderGrid = () => {
@@ -287,39 +304,99 @@ export function FloorplanCanvas({
               <Group>{renderGrid()}</Group>
               <Group>
                 {devices
-                  .filter((device) => device.is_stationary)
-                  .map((device) => (
-                    <Group
-                      key={device.dev_eui}
-                      draggable
-                      x={device.x ?? 0}
-                      y={device.y ?? 0}
-                      onDragEnd={(event) => {
-                        event.cancelBubble = true;
-                        onDeviceMove?.(
-                          device.id,
-                          event.target.x(),
-                          event.target.y()
+                  .filter((device) => {
+                    // Include stationary devices and Smart Badges with beacons
+                    if (device.is_stationary) return true;
+                    if (
+                      device.device_type === "Smart Badge" &&
+                      device.beacons &&
+                      device.beacons.length > 0
+                    )
+                      return true;
+                    return false;
+                  })
+                  .map((device) => {
+                    let posX = device.x ?? 0;
+                    let posY = device.y ?? 0;
+                    let isDraggable = device.is_stationary;
+
+                    // If it's a Smart Badge, compute position based on beacons
+                    if (
+                      device.device_type === "Smart Badge" &&
+                      device.beacons &&
+                      device.beacons.length > 0
+                    ) {
+                      isDraggable = false;
+                      let sumX = 0;
+                      let sumY = 0;
+                      let count = 0;
+
+                      device.beacons.forEach((beacon) => {
+                        const targetBeacon = devices.find(
+                          (d) =>
+                            d.is_stationary &&
+                            (d.device_type === "Beacon" ||
+                              d.device_type === "beacon") &&
+                            d.dev_eui.toLowerCase() ===
+                              beacon.mac_or_id.toLowerCase()
                         );
-                      }}
-                      onClick={(event) => {
-                        event.cancelBubble = true;
-                        onDeviceClick?.(device.id);
-                      }}
-                    >
-                      <Circle
-                        fill={getDeviceColor(device.device_type)}
-                        radius={16}
-                      />
-                      <Text
-                        fontSize={16}
-                        fill="#111827"
-                        text={getDeviceName(device)}
-                        x={24}
-                        y={-8}
-                      />
-                    </Group>
-                  ))}
+
+                        if (
+                          targetBeacon &&
+                          targetBeacon.x !== undefined &&
+                          targetBeacon.y !== undefined
+                        ) {
+                          sumX += targetBeacon.x;
+                          sumY += targetBeacon.y;
+                          count++;
+                        }
+                      });
+
+                      if (count > 0) {
+                        posX = sumX / count;
+                        posY = sumY / count;
+                      } else {
+                        // Don't render if we can't position it based on known beacons
+                        return null;
+                      }
+                    }
+
+                    return (
+                      <Group
+                        key={device.dev_eui}
+                        draggable={isDraggable}
+                        x={posX}
+                        y={posY}
+                        onDragEnd={(event) => {
+                          event.cancelBubble = true;
+                          onDeviceMove?.(
+                            device.id,
+                            event.target.x(),
+                            event.target.y()
+                          );
+                        }}
+                        onClick={(event) => {
+                          event.cancelBubble = true;
+                          onDeviceClick?.(device.id);
+                        }}
+                      >
+                        {isDeviceInAlarm(device) && (
+                          <AlarmRipple x={0} y={0} color="#dc2626" />
+                        )}
+                        <Circle
+                          fill={getDeviceColor(device.device_type)}
+                          radius={16}
+                        />
+                        <Text
+                          fontSize={16}
+                          fill="#111827"
+                          text={getDeviceName(device)}
+                          x={24}
+                          y={-8}
+                        />
+                      </Group>
+                    );
+                  })}
               </Group>
             </Layer>
           </Stage>

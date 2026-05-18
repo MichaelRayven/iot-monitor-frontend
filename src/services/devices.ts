@@ -44,7 +44,7 @@ export const getDeviceData = async (
 
 export const addFloorDevice = async (
   floorId: number,
-  deviceId: number,
+  devEui: string,
   isStationary: boolean,
   deviceType: string,
   x?: number,
@@ -56,7 +56,8 @@ export const addFloorDevice = async (
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      device_id: deviceId,
+      floor_id: floorId,
+      dev_eui: devEui,
       is_stationary: isStationary,
       device_type: deviceType,
       x,

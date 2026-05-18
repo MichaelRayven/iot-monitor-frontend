@@ -201,7 +201,7 @@ export function FloorDeviceList({ floorId }: { floorId: number }) {
       )}
 
       {!isPending && hasData && (
-        <CardContent>
+        <CardContent className="grow h-0">
           <ScrollArea className="h-full w-full">
             <div className="space-y-2">
               {data?.map((device) => (
