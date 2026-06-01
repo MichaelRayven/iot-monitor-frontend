@@ -21,7 +21,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { updateFloorDevice } from "@/services";
 import type { FloorDevice } from "@/types/device";
-import { DeviceTypeSelect } from "../device-type-select";
 import { Switch } from "../ui/switch";
 
 const numericStringSchema = z
@@ -33,7 +32,7 @@ const numericStringSchema = z
 
 const deviceSchema = z
   .object({
-    deviceType: z.string().min(1, "Тип устройства обязательное поле"),
+    name: z.string(),
     isStationary: z.boolean(),
     x: z.string(),
     y: z.string(),
@@ -41,25 +40,16 @@ const deviceSchema = z
   .superRefine((data, ctx) => {
     // Only validate coordinates when isStationary is true
     if (data.isStationary) {
-      // Validate x
       const xResult = numericStringSchema.safeParse(data.x);
       if (!xResult.success) {
         xResult.error.issues.forEach((issue) => {
-          ctx.addIssue({
-            ...issue,
-            path: ["x"],
-          });
+          ctx.addIssue({ ...issue, path: ["x"] });
         });
       }
-
-      // Validate y
       const yResult = numericStringSchema.safeParse(data.y);
       if (!yResult.success) {
         yResult.error.issues.forEach((issue) => {
-          ctx.addIssue({
-            ...issue,
-            path: ["y"],
-          });
+          ctx.addIssue({ ...issue, path: ["y"] });
         });
       }
     }
@@ -90,8 +80,7 @@ export function UpdateFloorDeviceDialog({
   const updateDeviceMutation = useMutation({
     mutationKey: ["update-floor-device", device.id],
     mutationFn: (updatedDevice: {
-      floor_id: number;
-      device_type: string;
+      name?: string;
       is_stationary: boolean;
       x?: number;
       y?: number;
@@ -104,7 +93,7 @@ export function UpdateFloorDeviceDialog({
 
   const form = useForm({
     defaultValues: {
-      deviceType: device.device_type ?? "",
+      name: device.name ?? "",
       isStationary: device.is_stationary,
       x: device.x?.toString() ?? "",
       y: device.y?.toString() ?? "",
@@ -115,8 +104,7 @@ export function UpdateFloorDeviceDialog({
     },
     onSubmit: async ({ value }) => {
       await updateDeviceMutation.mutateAsync({
-        device_type: value.deviceType,
-        floor_id: device.floor_id,
+        ...(value.name.trim() ? { name: value.name.trim() } : {}),
         is_stationary: value.isStationary,
         x: value.isStationary && value.x !== "" ? Number(value.x) : 0,
         y: value.isStationary && value.y !== "" ? Number(value.y) : 0,
@@ -135,7 +123,7 @@ export function UpdateFloorDeviceDialog({
         <DialogHeader>
           <DialogTitle>Обновить устройство</DialogTitle>
           <DialogDescription>
-            Измените параметры устройства {device.name ?? device.dev_eui}
+            Измените параметры устройства {device.name ?? device.uid}
           </DialogDescription>
         </DialogHeader>
         <form
@@ -147,19 +135,21 @@ export function UpdateFloorDeviceDialog({
         >
           <FieldGroup>
             <form.Field
-              name="deviceType"
+              name="name"
               children={(field) => {
                 const isInvalid =
                   field.state.meta.isTouched && !field.state.meta.isValid;
                 return (
                   <Field data-invalid={isInvalid}>
-                    <FieldLabel htmlFor={field.name}>Тип устройства</FieldLabel>
-                    <DeviceTypeSelect
+                    <FieldLabel htmlFor={field.name}>Название</FieldLabel>
+                    <Input
                       id={field.name}
                       name={field.name}
                       value={field.state.value}
-                      onValueChange={field.handleChange}
-                      isInvalid={isInvalid}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      aria-invalid={isInvalid}
+                      placeholder="Название устройства"
                       autoComplete="off"
                     />
                     {isInvalid && (

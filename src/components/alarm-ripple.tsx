@@ -1,5 +1,5 @@
 import Konva from "konva";
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Circle } from "react-konva";
 
 type RippleProps = {

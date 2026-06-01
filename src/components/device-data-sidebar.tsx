@@ -7,13 +7,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  getSmartBadgeReason,
-  getSmartBadgeStatus,
-  getSmartMS0101Reason,
-  getSmartMS0101State,
-  getSmartWB0101Mode,
-} from "@/lib/device-status-mappings";
+import { getStrategy } from "@/lib/device-strategies";
 import { formatTimestamp } from "@/lib/utils";
 import type { FloorDeviceWithData } from "@/types/device";
 import { DeviceDataHistoryModal } from "./device-data-history-modal";
@@ -53,6 +47,7 @@ export function DeviceDataSidebar({
 }: DeviceDataSidebarProps) {
   const [historyOpen, setHistoryOpen] = useState(false);
   const latestData = deviceData.data[0];
+  const strategy = getStrategy(deviceData.device_type);
 
   return (
     <>
@@ -61,10 +56,10 @@ export function DeviceDataSidebar({
           <div className="flex items-center justify-between">
             <div className="flex flex-col">
               <h2 className="text-lg font-bold truncate">
-                {deviceData.name || deviceData.dev_eui}
+                {deviceData.name || deviceData.uid}
               </h2>
               <h4 className="text-muted-foreground truncate">
-                {deviceData.name && deviceData.dev_eui}
+                {deviceData.name && deviceData.uid}
               </h4>
             </div>
             <Button variant="ghost" size="icon" onClick={onClose}>
@@ -82,28 +77,7 @@ export function DeviceDataSidebar({
                 const battery = item.battery_percent as number | undefined;
                 const temp = item.temperature_c as number | undefined;
 
-                // Map Status attributes depending on device type
-                let uiModeLabel: string | undefined = undefined;
-                let uiReasonLabel: string | undefined = undefined;
-
-                if (deviceData.device_type === "Smart Badge") {
-                  uiReasonLabel = getSmartBadgeReason(item.reason as number);
-                  uiModeLabel = getSmartBadgeStatus(item.state_raw as number);
-                } else if (
-                  deviceData.device_type === "Smart-WB0101" ||
-                  deviceData.device_type === "alarm-button"
-                ) {
-                  uiModeLabel = getSmartWB0101Mode(item.mode as number);
-                } else if (deviceData.device_type === "Smart-MS0101") {
-                  uiReasonLabel = getSmartMS0101Reason(
-                    item.send_reason as number
-                  );
-                  uiModeLabel = getSmartMS0101State(item.state as string);
-                } else {
-                  // Fallback
-                  uiModeLabel = item.mode_label as string | undefined;
-                  uiReasonLabel = item.send_reason_label as string | undefined;
-                }
+                const { modeLabel, reasonLabel } = strategy.deriveStatus(item);
 
                 return (
                   <>
@@ -139,16 +113,16 @@ export function DeviceDataSidebar({
                     </div>
 
                     {/* Statuses */}
-                    {uiModeLabel && (
+                    {modeLabel && (
                       <StatusBadge
                         label="Статус"
-                        value={uiModeLabel.replace(/_/g, " ")}
+                        value={modeLabel.replace(/_/g, " ")}
                       />
                     )}
-                    {uiReasonLabel && (
+                    {reasonLabel && (
                       <StatusBadge
                         label="Событие"
-                        value={uiReasonLabel.replace(/_/g, " ")}
+                        value={reasonLabel.replace(/_/g, " ")}
                       />
                     )}
 

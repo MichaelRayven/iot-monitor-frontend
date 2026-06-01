@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Select as SelectPrimitive } from "radix-ui";
-import { getDevices } from "@/services";
-import type { Device } from "@/types/device";
+import { getVegaDevices } from "@/services";
+import type { VegaDevice } from "@/types/device";
 import {
   Select,
   SelectContent,
@@ -18,9 +18,9 @@ type DeviceSelectProps = {
 } & React.ComponentProps<typeof SelectPrimitive.Root>;
 
 export function DeviceSelect({ id, isInvalid, ...props }: DeviceSelectProps) {
-  const { isPending, data } = useQuery<Device[]>({
-    queryKey: ["devices"],
-    queryFn: getDevices,
+  const { isPending, data } = useQuery<VegaDevice[]>({
+    queryKey: ["vega-devices"],
+    queryFn: getVegaDevices,
   });
 
   return (

@@ -1,5 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
+import { WS_BASE_URL } from "@/lib/constants";
 import type { FloorDevice, FloorDeviceWithData } from "@/types/device";
 import { useWebSocket } from "./useWebSocket";
 
@@ -10,7 +11,8 @@ interface DecodedData {
 
 interface WsUpdateAction {
   action: "update";
-  dev_eui: string;
+  dev_eui: string; // The WS message uses dev_eui (Vega field name)
+  floor_id: number;
   device_type: string;
   decoded: DecodedData;
 }
@@ -21,11 +23,9 @@ type WsOutgoingPayload =
 
 export function useRealtimeUpdates(floorId: number) {
   const queryClient = useQueryClient();
-  const WS_URL = "ws://localhost:8000/ws";
 
-  // 1. Consume our custom typed hook
   const { send, wsRef } = useWebSocket<WsUpdateAction, WsOutgoingPayload>(
-    WS_URL,
+    `${WS_BASE_URL}/ws`,
     {
       onOpen: () => {
         console.log("WebSocket Connected");
@@ -36,20 +36,20 @@ export function useRealtimeUpdates(floorId: number) {
 
         let deviceId: number | undefined;
 
-        // Update floor devices list cache
+        // Update floor devices list cache — match by uid (which equals dev_eui for Vega sensors)
         queryClient.setQueryData<FloorDevice[]>(
           ["floor-devices", floorId],
           (old) => {
             if (!old) return old;
             return old.map((d) => {
-              if (d.dev_eui === data.dev_eui) {
-                deviceId = d.id; // Capture ID for the detail update next
+              if (d.uid === data.dev_eui) {
+                deviceId = d.id;
                 return {
                   ...d,
                   ...data.decoded,
                   last_data_ts:
                     typeof data.decoded.device_timestamp === "number"
-                      ? data.decoded.device_timestamp * 1000
+                      ? data.decoded.device_timestamp // already seconds
                       : d.last_data_ts,
                 };
               }
@@ -75,7 +75,7 @@ export function useRealtimeUpdates(floorId: number) {
     }
   );
 
-  // 2. Manage subscription/unsubscription sync when floorId changes
+  // Manage subscription/unsubscription when floorId changes
   // without tearing down the underlying TCP WebSocket connection.
   useEffect(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {

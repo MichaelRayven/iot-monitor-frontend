@@ -7,10 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "format": "prettier . --write",
-    "format:check": "prettier . --check",
+    "lint": "biome check",
+    "lint:fix": "biome check --write",
     "stylelint": "stylelint \"src/**/*.{css,scss}\"",
     "stylelint:fix": "stylelint \"src/**/*.{css,scss}\" --fix",
     "test": "vitest",
@@ -22,9 +20,7 @@
     "*.{js,ts,cjs,mjs,jsx,tsx,json,jsonc,md,html,yml,yaml,css,scss}": [
       "pnpx @biomejs/biome check --write --no-errors-on-unmatched"
     ],
-    "*.{css,scss}": [
-      "stylelint --fix"
-    ]
+    "*.{css,scss}": ["stylelint --fix"]
   },
   "dependencies": {
     "@fontsource-variable/noto-sans": "^5.2.10",

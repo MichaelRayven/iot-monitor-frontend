@@ -1,32 +1,42 @@
-export type Device = {
+// Raw Vega server device (from GET /devices/vega)
+export type VegaDevice = {
   dev_eui: string;
-  name?: string;
-  rssi: number;
-  snr: number;
-  last_data_ts: number;
+  name: string | null;
+  rssi: number | null;
+  snr: number | null;
+  last_data_ts: number | null; // Unix epoch seconds
 };
 
-export type FloorDevice = Device & {
+export type NearbyBadge = {
+  badge_uid: string;
+  badge_name: string | null;
+  timestamp: number | null; // Unix epoch seconds
+  rssi: number | null;
+  battery_percent: number | null;
+  temperature_c: number | null;
+};
+
+// Device placed on a floor (both Vega sensors and Beacons)
+export type FloorDevice = {
   id: number;
   floor_id: number;
-  device_type: string;
+  uid: string; // dev_eui for Vega sensors; MAC address for Beacons
+  name: string | null;
+  device_type: string; // "Beacon" | "Smart Badge" | "Smart-WB0101" | "Smart-MS0101"
   is_stationary: boolean;
-  x?: number;
-  y?: number;
-  // Dynamic payload from websocket that can indicate alarms
-  send_reason?: number;
-  mode?: number;
-  // Payload for Smart Badge positioning
-  beacons?: {
-    mac_or_id: string;
-    battery_percent: number;
-    temperature_c: number;
-    humidity_percent: number;
-  }[];
+  x: number | null;
+  y: number | null;
+  // Vega signal quality — null for beacons
+  rssi: number | null;
+  snr: number | null;
+  last_data_ts: number | null; // Unix epoch seconds
 };
 
 export type FloorDeviceWithData = FloorDevice & {
-  data: { [item: string]: unknown }[];
+  // Vega sensors: last 50 decoded payloads
+  data: Record<string, unknown>[];
+  // Beacons: Smart Badge devices that recently saw this beacon
+  nearby_badges: NearbyBadge[];
 };
 
 export type DeviceType = string;

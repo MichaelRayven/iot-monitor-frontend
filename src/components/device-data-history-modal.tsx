@@ -4,7 +4,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import {
   Table,
   TableBody,
@@ -13,13 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  getSmartBadgeReason,
-  getSmartBadgeStatus,
-  getSmartMS0101Reason,
-  getSmartMS0101State,
-  getSmartWB0101Mode,
-} from "@/lib/device-status-mappings";
+import { getStrategy } from "@/lib/device-strategies";
 import { formatTimestamp } from "@/lib/utils";
 import type { FloorDeviceWithData } from "@/types/device";
 
@@ -29,24 +23,12 @@ type Props = {
   deviceData: FloorDeviceWithData;
 };
 
-function getDerivedStatus(deviceType: string, item: Record<string, unknown>) {
-  let uiModeLabel: string | undefined = undefined;
-  let uiReasonLabel: string | undefined = undefined;
-
-  if (deviceType === "Smart Badge") {
-    uiReasonLabel = getSmartBadgeReason(item.reason as number);
-    uiModeLabel = getSmartBadgeStatus(item.state_raw as number);
-  } else if (deviceType === "Smart-WB0101" || deviceType === "alarm-button") {
-    uiModeLabel = getSmartWB0101Mode(item.mode as number);
-  } else if (deviceType === "Smart-MS0101") {
-    uiReasonLabel = getSmartMS0101Reason(item.send_reason as number);
-    uiModeLabel = getSmartMS0101State(item.state as string);
-  } else {
-    uiModeLabel = item.mode_label as string | undefined;
-    uiReasonLabel = item.send_reason_label as string | undefined;
-  }
-
-  const parts = [uiModeLabel, uiReasonLabel].filter(Boolean);
+function getDerivedStatusLabel(
+  deviceType: string,
+  item: Record<string, unknown>
+): string {
+  const { modeLabel, reasonLabel } = getStrategy(deviceType).deriveStatus(item);
+  const parts = [modeLabel, reasonLabel].filter(Boolean);
   return parts.length > 0 ? parts.join(" / ") : "-";
 }
 
@@ -57,13 +39,13 @@ export function DeviceDataHistoryModal({
 }: Props) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[calc(90vw-2rem)]! w-full max-h-[80vh] flex flex-col">
+      <DialogContent className="sm:max-w-[calc(90vw-2rem)]! flex! flex-col w-full max-h-[80vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle>
-            История: {deviceData.name || deviceData.dev_eui}
+            История: {deviceData.name || deviceData.uid}
           </DialogTitle>
         </DialogHeader>
-        <ScrollArea className="flex-1 mt-4">
+        <div className="flex-1 min-h-0 mt-4 overflow-y-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -80,7 +62,7 @@ export function DeviceDataHistoryModal({
                 const battery = item.battery_percent;
                 const packet = item.packet as string;
 
-                const statusStr = getDerivedStatus(
+                const statusStr = getDerivedStatusLabel(
                   deviceData.device_type,
                   item
                 );
@@ -133,7 +115,7 @@ export function DeviceDataHistoryModal({
               })}
             </TableBody>
           </Table>
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );

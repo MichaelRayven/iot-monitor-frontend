@@ -1,14 +1,17 @@
 import { API_BASE_URL } from "@/lib/constants";
+import type { BuildingSchema } from "@/types/building";
 import type { BaseFloorSchema, FloorSchema } from "@/types/floor";
 
 export const getFloorsByBuilding = async (
   buildingId: number
 ): Promise<BaseFloorSchema[]> => {
-  const response = await fetch(`${API_BASE_URL}/floors/building/${buildingId}`);
+  const response = await fetch(`${API_BASE_URL}/buildings`);
   if (!response.ok) {
-    throw new Error("Failed to fetch floors");
+    throw new Error("Failed to fetch buildings");
   }
-  return response.json();
+  const buildings: BuildingSchema[] = await response.json();
+  const building = buildings.find((b) => b.id === buildingId);
+  return building?.floors ?? [];
 };
 
 export const getFloor = async (floorId: number): Promise<FloorSchema> => {

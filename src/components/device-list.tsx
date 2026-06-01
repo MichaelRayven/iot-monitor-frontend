@@ -10,11 +10,12 @@ import {
 import { useState } from "react";
 import {
   deleteFloorDevice,
-  getDevices,
   getFloorDevices,
+  getVegaDevices,
   updateFloorDevice,
 } from "@/services";
-import type { Device, FloorDevice } from "@/types/device";
+import { useAppStore } from "@/stores/app";
+import type { FloorDevice, VegaDevice } from "@/types/device";
 import { AddFloorDeviceDialog } from "./dialog/add-floor-device";
 import { UpdateFloorDeviceDialog } from "./dialog/update-floor-device";
 import {
@@ -33,31 +34,40 @@ import {
 import { ScrollArea } from "./ui/scroll-area";
 import { Separator } from "./ui/separator";
 
+// last_data_ts is Unix epoch seconds; compare against Date.now() (ms)
+const STALE_MS = 5 * 60 * 1000;
+const isOnline = (lastDataTs: number | null): boolean => {
+  if (!lastDataTs) return false;
+  return Date.now() - lastDataTs * 1000 < STALE_MS;
+};
+
 type DeviceListItemProps = {
   device?: FloorDevice;
-  name?: string;
-  devEui: string;
-  rssi: number;
-  snr: number;
-  lastOnline: number;
+  name?: string | null;
+  uid: string;
+  rssi: number | null;
+  snr: number | null;
+  lastDataTs: number | null;
   isStationary?: boolean;
-  x?: number;
-  y?: number;
+  x?: number | null;
+  y?: number | null;
+  onClick?: () => void;
+  isSelected?: boolean;
 };
 
 export function DeviceListItem({
   device,
-  devEui,
+  uid,
   name,
-  lastOnline,
+  lastDataTs,
   rssi,
   snr,
   isStationary = false,
   x = 0,
   y = 0,
+  onClick,
+  isSelected = false,
 }: DeviceListItemProps) {
-  const FIVE_MINUTES = 1000 * 60 * 5;
-  const isOnline = (timestamp: number) => Date.now() - timestamp < FIVE_MINUTES;
   const queryClient = useQueryClient();
   const [updateOpen, setUpdateOpen] = useState(false);
 
@@ -72,8 +82,6 @@ export function DeviceListItem({
   const toggleStationary = useMutation({
     mutationFn: () =>
       updateFloorDevice(device!.id, {
-        floor_id: device?.floor_id ? Number(device.floor_id) : undefined,
-        device_type: device?.device_type ?? "",
         is_stationary: !device?.is_stationary,
         x: device?.x ?? 0,
         y: device?.y ?? 0,
@@ -84,10 +92,16 @@ export function DeviceListItem({
     },
   });
 
+  const online = isOnline(lastDataTs);
+
   const innerContent = (
     <div
-      className="rounded-lg border p-4 shadow-sm hover:cursor-pointer"
+      className={clsx(
+        "rounded-lg border p-4 shadow-sm hover:cursor-pointer transition-colors",
+        isSelected && "border-primary bg-primary/5"
+      )}
       draggable={!!device}
+      onClick={onClick}
       onDragStart={(e) => {
         if (device?.id) {
           e.dataTransfer.setData("application/device-id", device.id.toString());
@@ -97,18 +111,18 @@ export function DeviceListItem({
       <div className="flex gap-2">
         <div>
           <p className="flex items-center gap-2 font-medium">
-            {name ? name : devEui}
+            {name ? name : uid}
             {isStationary && (
               <MapPinIcon className="text-muted-foreground size-4" />
             )}
           </p>
-          <p className="text-muted-foreground">{name ? devEui : ""}</p>
+          <p className="text-muted-foreground">{name ? uid : ""}</p>
         </div>
 
         <div
           className={clsx(
             "ml-auto size-2 rounded-full",
-            isOnline(lastOnline) ? "bg-green-600" : "bg-red-600"
+            online ? "bg-green-600" : "bg-red-600"
           )}
         ></div>
       </div>
@@ -117,13 +131,13 @@ export function DeviceListItem({
 
       <div className="flex gap-2">
         <p>
-          RSSI: {rssi} SNR: {snr}
+          RSSI: {rssi ?? "—"} SNR: {snr ?? "—"}
         </p>
       </div>
       {isStationary && (
         <div className="flex gap-2">
           <p>
-            Позиция: X: {x}, Y: {y}
+            Позиция: X: {x ?? 0}, Y: {y ?? 0}
           </p>
         </div>
       )}
@@ -170,6 +184,27 @@ export function DeviceListItem({
   );
 }
 
+function FloorDeviceListItem({ device }: { device: FloorDevice }) {
+  const { selectedDeviceId, setSelectedDeviceId } = useAppStore();
+  const isSelected = selectedDeviceId === device.id;
+
+  return (
+    <DeviceListItem
+      device={device}
+      name={device.name}
+      isStationary={device.is_stationary}
+      uid={device.uid}
+      lastDataTs={device.last_data_ts}
+      rssi={device.rssi}
+      snr={device.snr}
+      x={device.x}
+      y={device.y}
+      isSelected={isSelected}
+      onClick={() => setSelectedDeviceId(isSelected ? null : device.id)}
+    />
+  );
+}
+
 export function FloorDeviceList({ floorId }: { floorId: number }) {
   const { data, isPending } = useQuery<FloorDevice[]>({
     queryKey: ["floor-devices", floorId],
@@ -205,18 +240,7 @@ export function FloorDeviceList({ floorId }: { floorId: number }) {
           <ScrollArea className="h-full w-full">
             <div className="space-y-2">
               {data?.map((device) => (
-                <DeviceListItem
-                  key={device.dev_eui}
-                  device={device}
-                  name={device.name}
-                  isStationary={device.is_stationary}
-                  devEui={device.dev_eui}
-                  lastOnline={device.last_data_ts}
-                  rssi={device.rssi}
-                  snr={device.snr}
-                  x={device.x}
-                  y={device.y}
-                />
+                <FloorDeviceListItem key={device.uid} device={device} />
               ))}
             </div>
           </ScrollArea>
@@ -227,9 +251,9 @@ export function FloorDeviceList({ floorId }: { floorId: number }) {
 }
 
 export function DeviceList() {
-  const { data } = useQuery<Device[]>({
-    queryKey: ["devices"],
-    queryFn: getDevices,
+  const { data } = useQuery<VegaDevice[]>({
+    queryKey: ["vega-devices"],
+    queryFn: getVegaDevices,
   });
 
   return (
@@ -238,12 +262,12 @@ export function DeviceList() {
         {data?.map((device) => (
           <DeviceListItem
             key={device.dev_eui}
-            // no device prop passed as it's not a FloorDevice
+            // no device prop — not a FloorDevice
             name={device.name}
-            devEui={device.dev_eui}
+            uid={device.dev_eui}
             rssi={device.rssi}
             snr={device.snr}
-            lastOnline={device.last_data_ts}
+            lastDataTs={device.last_data_ts}
           />
         ))}
       </div>
