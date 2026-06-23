@@ -134,7 +134,7 @@ class SmartWB0101Strategy extends DeviceStrategy {
 
   isInAlarm(data: Record<string, unknown>) {
     const mode = data["mode"] as number | undefined;
-    return typeof mode === "number" && mode >= 2 && mode <= 5;
+    return typeof mode === "number" && mode >= 2 && mode <= 6;
   }
 
   hasActivityPulse() {
